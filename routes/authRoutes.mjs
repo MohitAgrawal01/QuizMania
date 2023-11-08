@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt'; // Import bcrypt
+import cookieParser from 'cookie-parser';
 dotenv.config();
 
 
@@ -83,6 +84,26 @@ router.post('/login', async (req, res) => {
 router.get('/logout', (req, res) => {
     res.clearCookie('jwt');
     res.redirect('/login');
+});
+
+
+router.get('/isSessionAuthenticated', (req, res) => {
+    const token = req.cookies.jwt;
+
+    if (!token) {
+        return res.json({ authenticated: false });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET
+        , (err, decoded) => {
+        if (err) {
+            // JWT is either expired or invalid
+            return res.json({ authenticated: false });
+        }
+
+        // JWT is valid, user is authenticated
+        res.json({ authenticated: true, username: decoded.username });
+    });
 });
 
 export default router;

@@ -3,13 +3,19 @@ import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
-
+import jwt from "jsonwebtoken";
 import authRoutes from './routes/authRoutes.mjs';
-
+import quizRoutes from './routes/quizRoutes.mjs'; 
+import session from 'express-session';
 const app = express();
 
 dotenv.config();
 
+app.use(session({
+  secret: process.env.SESSION_SECRET, // Replace with your actual secret key
+  resave: false,
+  saveUninitialized: true,
+}));
 
 const port = process.env.PORT;
 mongoose.connect(process.env.MONGO_URI, {
