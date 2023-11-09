@@ -86,14 +86,17 @@ router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
     if (!quiz) {
       return res.status(404).json({ error: 'Quiz not found' });
     }
-
+    if(req.session.quiz.isNew==true){
+      req.session.quiz.isNew = false;
+      req.session.quiz.time = Date.now();
+    }
     const questions = quiz.questions;
 
     // Calculate the timeLeft based on the time elapsed since the user started the quiz
     let timeLeft = 0;
 
     if (req.session.quiz.currentQuestionIndex === questions.length) {
-      return res.status(200).json({ status: 'true', message: 'quiz completed' });
+      return res.status(200).json({ status: 'true', message: 'quiz completed',currentQuestion:req.session.quiz.currentQuestionIndex+1,totalQuestions:questions.length, score:req.session.quiz.userScore });
     }
 
     if (Date.now() - req.session.quiz.time < 10000) {
@@ -102,7 +105,7 @@ router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
     }
 
     const firstQuestion = questions[req.session.quiz.currentQuestionIndex]; // Assuming this is the first question
-    res.json({ question: firstQuestion.question, options: firstQuestion.options, timeleft: timeLeft });
+    res.json({ question: firstQuestion.question, options: firstQuestion.options, timeleft: timeLeft, currentQuestion:req.session.quiz.currentQuestionIndex+1,totalQuestions:questions.length, score:req.session.quiz.userScore});
   } catch (err) {
     return res.status(500).json({ error: 'Error while querying the database' });
   }
@@ -132,7 +135,9 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
     }
 
     const questions = quiz.questions;
-
+    if(questions.length==req.session.quiz.currentQuestionIndex){
+        return res.json({score:req.session.quiz.userScore,message: 'Quiz finished'})
+    }
     const currentQuestion = questions[userSession.currentQuestionIndex];
 
     // Check if the user's answer matches the correct answer
@@ -143,16 +148,18 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
       userSession.userScore++;
     }
 
-    // Update the session time and current question index
-    req.session.quiz.time = Date.now() + 1000;
+    // Update current question index
+    req.session.quiz.isNew = true;
     userSession.currentQuestionIndex++;
 
     if (userSession.currentQuestionIndex < questions.length) {
       // Provide the next question if more questions are available
-      const nextQuestion = questions[userSession.currentQuestionIndex];
+      //const nextQuestion = questions[userSession.currentQuestionIndex];
       res.json({
-        question: nextQuestion.question,
-        options: nextQuestion.options,
+        currentQuestion:req.session.quiz.currentQuestionIndex,
+        totalQuestions:questions.length,
+        score:userSession.userScore,
+        correctAnswer: currentQuestion.answer.toLowerCase(),
         lastAnswerCorrect: isAnswerCorrect, // Indicate if the last answer was correct
       });
     } else {
@@ -162,12 +169,16 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
       await userScore.save();
 
       res.json({
+        currentQuestion:req.session.quiz.currentQuestionIndex,
+        totalQuestions:questions.length,
         score,
         message: 'Quiz finished',
+        correctAnswer: currentQuestion.answer.toLowerCase(),
         lastAnswerCorrect: isAnswerCorrect, // Indicate if the last answer was correct
       });
     }
   } catch (error) {
+   // console.log(error)
     // Handle any unexpected errors with an Internal Server Error response
     res.status(500).json({ error: 'An error occurred' });
   }
@@ -229,6 +240,7 @@ router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
       joinCode,
       userId: userEmail, // Use the email as the user ID
       time: Date.now(), // Replace with the actual user ID
+      isNew: true,
     };
 
     // If a quiz with the given join code is found, it's valid
