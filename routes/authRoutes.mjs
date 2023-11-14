@@ -103,7 +103,7 @@ router.post('/login', async (req, res) => {
 
 router.get('/logout', (req, res) => {
     res.clearCookie('jwt');
-    res.redirect('/login');
+    res.redirect('/dashboard');
 });
 
 // Route to fetch user email and username from MongoDB based on JWT
@@ -121,9 +121,9 @@ router.get('/profile', checkUserLogin, async (req, res) => {
       const user = await User.find({ email }, 'email username');
       if (user) {
         //console.log(user);
-        res.json({ email: user[0].email, username: user[0].username });
+        res.json({ email: user[0].email, username: user[0].username , authenticated: true});
       } else {
-        res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ message: 'User not found',authenticated: false });
       }
     } catch (error) {
      // console.error('Error fetching user profile:', error);

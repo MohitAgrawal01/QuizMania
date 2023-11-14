@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import authRoutes from './routes/authRoutes.mjs';
 import quizRoutes from './routes/quizRoutes.mjs'; 
 import session from 'express-session';
+import checkUserLogin from './middleware/userMiddleware.mjs';
 const app = express();
 
 dotenv.config();
@@ -37,9 +38,49 @@ app.use(express.static(path.resolve() + '/public'));
 
 import './models/userModel.mjs';
 
+
+
+app.use(express.static('public'));
+
+app.get('/',(req, res)=>{
+  const currentPage='dashboard';
+  res.render("dashboard",{title:'Dashboard',currentPage:'dashboard'});
+})
+app.get('/dashboard',(req,res)=>{
+  const currentPage='dashboard';
+  res.render('dashboard',{title:'Dashboard',currentPage:'dashboard'});
+
+})
+app.get('/addquiz',(req,res)=>{
+  const currentPage='addquiz';
+  res.render('addquiz',{title:'Create Quiz',currentPage:'addquiz'});
+  
+})
+app.get('/login',(req,res)=>{
+  res.render('login',{title:'login'});
+})
+app.get('/signup',(req,res)=>{
+  res.render('signup',{title:'signup'});
+})
+// app.get('/myquizes',(req,res)=>{
+//   res.render('myquizes');
+// })
+
+app.get("/join",(req,res)=>{
+  res.render("join",{title:'Join Quiz',currentPage:'join'});
+});
+
+// Route to join a quiz
+app.get('/joinquiz/:quizId', checkUserLogin, (req, res) => {
+  const quizId = req.params.quizId;
+  // Serve the "joinquiz" page or template
+  res.render('joinquiz', { quizId });
+});
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
   });
 
 
 app.use('', authRoutes);
+app.use('', quizRoutes);

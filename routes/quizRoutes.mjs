@@ -3,7 +3,8 @@ import checkUserLogin from '../middleware/userMiddleware.mjs';
 import Quiz from '../models/quizModel.mjs';
 import UserScore from '../models/userScoreModel.mjs';
 import router from './authRoutes.mjs';
-import path from 'path';
+import path, { join } from 'path';
+import moment from "moment-timezone";
 import jwt from "jsonwebtoken";
 // Route to serve the addquiz.html file
 
@@ -11,13 +12,13 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 
 router.post('/addquiz', checkUserLogin, async (req, res) => {
-  const quizData = req.body;
+  const { quizTopic, questions } = req.body;
 
-  if (!Array.isArray(quizData) || quizData.length === 0) {
+  if (!quizTopic || !Array.isArray(questions) || questions.length === 0 || quizTopic.length<3) {
     return res.status(400).json({ message: 'Invalid quiz data format' });
   }
 
-  for (const question of quizData) {
+  for (const question of questions) {
     if (
       !question.question ||
       !Array.isArray(question.options) ||
@@ -38,11 +39,14 @@ router.post('/addquiz', checkUserLogin, async (req, res) => {
       try {
         const decodedToken = jwt.verify(jwtCookie, process.env.JWT_SECRET);
         const email = decodedToken.email;
-
+        const creationTime = moment().tz("Asia/Kolkata").format();
+        console.log("Creation Time:", creationTime);
         const quiz = new Quiz({
           quizId,
-          questions: quizData,
+          quizTopic,
+          questions,
           createdBy: email,
+          creationTime, // Adding creationTime field with the current timestamp
         });
 
         // Save the quiz to the database
@@ -62,8 +66,6 @@ router.post('/addquiz', checkUserLogin, async (req, res) => {
     res.status(500).json({ message: 'Error adding quiz' });
   }
 });
-
-
 
 // API endpoint to get quiz questions
 router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
@@ -184,20 +186,34 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
   }
 });
 
-
 router.get('/myquizes', async (req, res) => {
   const jwtCookie = req.cookies.jwt;
 
   if (jwtCookie) {
     try {
-      const decodedToken = jwt.verify(jwtCookie, process.env.JWT_SECRET); // Replace process.env.JWT_SECRET with your actual secret key
-      const userId = decodedToken.email; // Use the email as the user ID (you can change this to use a different identifier as needed)
+      const decodedToken = jwt.verify(jwtCookie, process.env.JWT_SECRET);
+      const userId = decodedToken.email;
 
       try {
-        const userQuizzes = await Quiz.find({ createdBy: userId }, 'quizId createdBy');
+        // Retrieve quizzes including creationTime
+        const userQuizzes = await Quiz.find({ createdBy: userId }, 'quizId createdBy creationTime quizTopic questions');
 
-        // Send the user's quizzes as JSON
-        res.status(200).json({ quizzes: userQuizzes });
+        // Map quizzes to include the creationTime in a more readable format
+        const quizzesWithFormattedTime = userQuizzes.map((quiz) => ({
+          quizId: quiz.quizId,
+          createdBy: quiz.createdBy,
+          quizTopic: quiz.quizTopic,
+          creationTime: moment(quiz.creationTime).tz("Asia/Kolkata").format("MMMM Do YYYY, h:mm:ss a"), // Adjust the format as needed
+          numberOfQuestions:quiz.questions.length,
+        }));
+
+        // Render the myquizes view with the quizzes
+        res.render('myquizes', { quizzes: quizzesWithFormattedTime,title:'Myquizes' ,currentPage:'myquizes'});
+
+        
+
+        // Alternatively, you can send the JSON response
+        // res.status(200).json({ quizzes: quizzesWithFormattedTime });
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while fetching user quizzes.' });
@@ -213,13 +229,13 @@ router.get('/myquizes', async (req, res) => {
 });
 
 
+
 router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
   const joinCode = req.body.joinCode;
 
   try {
     // Use Mongoose to find a quiz with the given quizId (assuming join code is the same as quizId)
     const quiz = await Quiz.findOne({ quizId: joinCode }).exec();
-
     if (!quiz) {
       // No quiz found for the given join code, so it's invalid
       return res.json({ valid: false, message: 'Invalid join code' });
@@ -256,7 +272,6 @@ router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
 // Route to view the leaderboard for a quiz
 router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
   const quizId = req.params.quizId;
-  
   try {
     // Extract the user's email from the JWT token
     const userToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET); // Replace process.env.JWT_SECRET with your actual secret key
@@ -295,13 +310,15 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
     // Find the user's rank based on their email
     const userRank = leaderboardData.findIndex(entry => entry.userId === userEmail)+1;
     
-    res.json({ leaderboardData, userRank });
+    //res.json({ leaderboardData, userRank });
+    res.render('leaderboard', {leaderboardData, userRank,title:'Leaderboard',currentPage:'leaderboard'});
+
   } catch (err) {
     console.error(err);
     res.status(500).send('An error occurred');
   }
 });
-
+[]
 
 
 
