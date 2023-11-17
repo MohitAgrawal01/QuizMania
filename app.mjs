@@ -87,7 +87,7 @@ app.listen(port, () => {
 
 
   app.get('/createAiquiz', (req, res) => {
-    res.render("createAiquiz",{title:'Generate Quizes using AI',currentPage:'createAiquiz'});
+    res.render("createAIquiz",{title:'Generate Quizes using AI',currentPage:'createAiquiz'});
   });
 
 
