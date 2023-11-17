@@ -7,8 +7,24 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Add Quiz - QuizMania</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
         <style>
+
+        #loading-spinner {
+            display: none; /* Hide the spinner initially */
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #loading-spinner {
+    display: block !important; /* Override any other styles */
+}
+
+
+        #quiz-container {
+            display: none; /* Hide the quiz container initially */
+        }
             a {
                 text-decoration: none;
             }
@@ -25,7 +41,11 @@
         </style>
     </head>
 
+
     <body ng-controller="QuizController">
+  
+       
+        
         <div id="notAuthenticatedMessage" class="alert alert-danger text-center" style="display: none;">
             <p>You are not logged in. 😢</p>
             <p>Redirecting to login page in <span id="countdown">{{ countdownValue }}</span> seconds...</p>
@@ -44,7 +64,8 @@
                     <div class="mb-3">
                         <!-- Add this input field for the quiz topic -->
                         <label for="quiz-topic" class="form-label">Quiz Topic</label>
-                        <input type="text" class="form-control" ng-model="quizTopic" name="quizTopic" id="quizTopic" placeholder="Enter quiz topic">
+                        <input type="text" class="form-control" ng-model="quizTopic" name="quizTopic" id="quizTopic"
+                            placeholder="Enter quiz topic" value="">
                     </div>
 
                     <div id="question-container">
@@ -101,6 +122,13 @@
                     </div>
                 </div>
                 <div class="col-md-2"></div>
+                <div id="loading-spinner" ng-if="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p>Fetching Quiz...<br>
+                         It may take upto 1 minute for best results</p>
+                </div>
             </div>
 
             <!-- Modal for Quiz Preview -->
@@ -138,10 +166,14 @@
         <script src="https://code.angularjs.org/1.8.2/angular.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            angular.module('quizApp', []).controller('QuizController', function ($scope, $interval, $timeout, $window) {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            angular.module('quizApp', []).controller('QuizController', function ($scope, $interval, $timeout, $window, $location) {
                 $scope.questions = [];
                 $scope.previewQuestions = [];
                 $scope.authenticated = false;
+
+
 
                 $scope.checkAuthentication = function () {
                     $.ajax({
@@ -153,6 +185,12 @@
                                 $('#notAuthenticatedMessage').show();
                                 $scope.startCountdown(5); // Set initial countdown value
                             } else {
+
+                                if (urlParams.get('topic').length < 3) {
+                                    alert("Topic length must be atleast 3 to process your request");
+                                    $('#authenticated').hide();
+                                    window.location('/createAIQuiz');
+                                }
                                 // If authenticated, show the content
                                 $scope.$apply(function () {
                                     $scope.authenticated = true;
@@ -201,11 +239,10 @@
                     $scope.questions.splice(index, 1);
                 };
 
-        
+
 
                 $scope.previewQuiz = function () {
                     $scope.previewQuestions = angular.copy($scope.questions);
-                 
 
                     $('#previewModal').modal('show');
                 };
@@ -213,6 +250,7 @@
                 $scope.backToEditing = function () {
                     $('#previewModal').modal('hide');
                 };
+
 
                 $scope.confirmQuiz = function () {
 
@@ -226,7 +264,7 @@
                         };
                     });
 
-                 
+
                     $.ajax({
                         url: '/addquiz',
                         method: 'POST',
@@ -237,7 +275,7 @@
                         }),
                         success: function (response) {
 
-                           // console.log('Server Response:', response);
+                            // console.log('Server Response:', response);
                             alert('Quiz added successfully');
                             window.location.href = '/myquizes';
                         },
@@ -250,8 +288,71 @@
                     $('#previewModal').modal('hide');
                 };
 
-                // Initial question card
-                $scope.addQuestion();
+
+
+                $scope.fetchQuestions = async function () {
+
+
+                    $scope.quizTopic = urlParams.get('topic') || '';
+
+                    $scope.loading = true;  // Set initial loading state to true
+                    try{
+                   await $.ajax({
+                        url: '/getaiquiz?topic=' + urlParams.get('topic'),
+                        method: 'GET',
+                        contentType: 'application/json',
+                        success: function (response) {
+                            console.log(typeof response)
+                            // document.getElementById('quizTopic').value = urlParams.get('topic');
+
+                            var json = JSON.parse(response);
+
+                            json.forEach(item => {
+                                const questionObj = {
+                                    question: item.question,
+                                    options: [
+                                        { letter: 'A', text: item.options[0] },
+                                        { letter: 'B', text: item.options[1] },
+                                        { letter: 'C', text: item.options[2] },
+                                        { letter: 'D', text: item.options[3] }
+                                    ],
+                                    answer: item.correctAnswer
+                                };
+
+                                $scope.$apply(function() {
+                                    $scope.questions.push(questionObj);
+                                    $scope.loading = false;
+});
+
+                                // Push the question object to the $scope.questions array
+                               
+
+
+                            });
+
+
+                            console.log('Server Response:', response);
+                            //alert('Quiz fetched successfully');
+                            $scope.loading = false; 
+                            // window.location.href = '/myquizes';
+                        },
+                        error: function (err) {
+                            $scope.loading = false; 
+                            console.error('Error:', err);
+                            alert('Error fetching quiz');
+                        }
+                    });
+                    console.log('Quiz fetched');
+                   
+                }
+                catch(error){
+                    console.log(error);
+                    $scope.loading = false; 
+                }
+                };
+
+
+                $scope.fetchQuestions();
                 $scope.checkAuthentication();
             });
         </script>

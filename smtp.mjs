@@ -66,7 +66,7 @@ export default function sendotp(userEmail, otpCode) {
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-       // console.error(error);
+       console.error(error);
         reject(false);
       } else {
        // console.log('Email sent: ' + info.response);

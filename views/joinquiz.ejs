@@ -90,7 +90,7 @@
     </div>
         <!-- Submit button in bottom right -->
         <div class="d-flex justify-content-end mb-4 me-4">
-            <button class="btn btn-primary" id="nextQuestion">Submit</button>
+            <button class="btn btn-primary" id="nextQuestion">Next</button>
         </div>
         
         
@@ -164,6 +164,9 @@
                 }
                 var currentQuestion = data.currentQuestion;
                 var totalQuestion = data.totalQuestions;
+                if(currentQuestion==totalQuestion){
+                    document.getElementById('nextQuestion').innerHTML = "Submit Quiz";
+                }
 
 
                 // Update the content of the divs
@@ -185,8 +188,8 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-            console.log("redirecting to join..")
-              //  window.location.href = '/join';
+           
+       //     window.location.href = '/join';
             });
         }
     

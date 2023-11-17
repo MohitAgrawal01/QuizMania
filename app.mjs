@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes.mjs';
 import quizRoutes from './routes/quizRoutes.mjs'; 
 import session from 'express-session';
 import checkUserLogin from './middleware/userMiddleware.mjs';
+import quizzesData from './quizzes.json' assert { type: 'json' };
 const app = express();
 
 dotenv.config();
@@ -41,14 +42,15 @@ import './models/userModel.mjs';
 
 
 app.use(express.static('public'));
+app.get('/', (req, res) => {
+  const currentPage = 'dashboard';
+  res.render('dashboard', { title: 'Dashboard', currentPage: 'dashboard', quizzes: quizzesData });
+});
 
-app.get('/',(req, res)=>{
-  const currentPage='dashboard';
-  res.render("dashboard",{title:'Dashboard',currentPage:'dashboard'});
-})
+
 app.get('/dashboard',(req,res)=>{
   const currentPage='dashboard';
-  res.render('dashboard',{title:'Dashboard',currentPage:'dashboard'});
+  res.render('dashboard',{title:'Dashboard',currentPage:'dashboard',quizzes: quizzesData });
 
 })
 app.get('/addquiz',(req,res)=>{
@@ -81,6 +83,16 @@ app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
   });
 
+
+
+  app.get('/createAiquiz', (req, res) => {
+    res.render("createAiquiz",{title:'Generate Quizes using AI',currentPage:'createAiquiz'});
+  });
+
+
+  app.get('/aiquiz', (req, res) => {
+    res.render("aiquiz",{title:'Generate Quizes using AI',currentPage:'aiquiz'});
+  });
 
 app.use('', authRoutes);
 app.use('', quizRoutes);

@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
     <title><%=title %></title>
     <style>
+      a:hover{
+        text-decoration: none;
+        color: white;
+        transform: scale(1.2);
+      }
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -36,6 +41,7 @@
                 <a href="/addquiz" class="<%=currentPage==='addquiz'? 'bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium' : 'text-gray-300 hover-bg-gray-700 hover-text-white rounded-md px-3 py-2 text-sm font-medium'%>">Create Quiz</a>
                 <a href="/join" class="<%=currentPage==='join'? 'bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium' : 'text-gray-300 hover-bg-gray-700 hover-text-white rounded-md px-3 py-2 text-sm font-medium'%>">Join Quiz</a>
                 <a href="/myquizes" class="<%=currentPage==='myquizes'? 'bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium' : 'text-gray-300 hover-bg-gray-700 hover-text-white rounded-md px-3 py-2 text-sm font-medium'%>">My Quizzes</a>
+                <a href="/createAIquiz" class="<%=currentPage==='createAiquiz'|| currentPage==='aiquiz'? 'bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium' : 'text-gray-300 hover-bg-gray-700 hover-text-white rounded-md px-3 py-2 text-sm font-medium'%>">AI quiz</a>
               </div>              
             </div>
           </div>
@@ -57,13 +63,13 @@
           </div>
           <div class=" md:block">
             <div class="ml-4 flex items-center md:ml-6">
-              <button type="button" class="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-gray-800 px-4 py-2 rounded-md" id="loginButton" style="display: block;">
-                <a href="/login">Login</a>
+              <button type="button" onclick="window.location.href='/login'" class="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-gray-800 px-4 py-2 rounded-md" id="loginButton" style="display: block;">
+               Login
               </button>
               <div class="relative ml-3">
                 <div>
-                  <button type="button" class="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-gray-800 px-4 py-2 rounded-md" id="signupButton" style="display: block;">
-                    <a href="/signup">Signup</a>
+                  <button type="button" onclick="window.location.href='/signup'" class="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-gray-800 px-4 py-2 rounded-md" id="signupButton" style="display: block;">
+                    Signup
                   </button>
                 </div>
               </div>
@@ -103,6 +109,8 @@
           <a href="/addquiz" class="<%=currentPage==='addquiz' ? 'bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium': 'text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium'%>">Create Quiz</a>
           <a href="/join" class="<%=currentPage==='join' ? 'bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium': 'text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium'%>">Join Quiz</a>
           <a href="/myquizes" class="<%=currentPage==='myquizes' ? 'bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium': 'text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium'%>">My Quizes</a>
+          <a href="/createAIquiz" class="<%=currentPage==='createAIQuiz' ? 'bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium': 'text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium'%>">AI Quiz</a>
+        
         </div>
       </div>
     </nav>

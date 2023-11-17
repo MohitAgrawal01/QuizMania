@@ -76,10 +76,11 @@ router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
     return res.status(401).json({ error: 'Invalid Quiz Session' });
   }
 
-
+  console.log(quizId)
+  console.log(req.session.quiz.joinCode)
   // Verify that the requested quizId matches the joinCode stored in the session
-  if (quizId !== req.session.quiz.joinCode) {
-    return res.status(401).json({ error: 'Invalid Quiz Session' });
+  if (quizId != req.session.quiz.joinCode) {
+    return res.status(401).json({ error: 'Invalid Quiz Session2' });
   }
 
   try {
@@ -121,7 +122,7 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
   const userAnswer = req.body.answer; // User's answer received in the request body
 
   // Check if the session, quiz, or join code is invalid
-  if (!req.session || !req.session.quiz || req.session.quiz.joinCode !== quizId) {
+  if (!req.session || !req.session.quiz || req.session.quiz.joinCode != quizId) {
     // Return an Unauthorized response for an invalid quiz session
     return res.status(401).json({ error: 'Invalid quiz session' });
   }
@@ -197,7 +198,7 @@ router.get('/myquizes', async (req, res) => {
       try {
         // Retrieve quizzes including creationTime
         const userQuizzes = await Quiz.find({ createdBy: userId }, 'quizId createdBy creationTime quizTopic questions');
-
+        console.log(userQuizzes);
         // Map quizzes to include the creationTime in a more readable format
         const quizzesWithFormattedTime = userQuizzes.map((quiz) => ({
           quizId: quiz.quizId,
@@ -219,12 +220,12 @@ router.get('/myquizes', async (req, res) => {
         res.status(500).json({ message: 'An error occurred while fetching user quizzes.' });
       }
     } catch (jwtError) {
+      res.send('<script> window.location.href = "/login";</script>');
       console.error('JWT verification error:', jwtError);
-      res.status(401).json({ message: 'Unauthorized' });
     }
   } else {
     // Handle the case where the JWT cookie is not present or invalid
-    res.status(401).json({ message: 'Unauthorized' });
+    res.status(401).send('<script>  window.location ="/login"; </script>');
   }
 });
 
@@ -258,7 +259,7 @@ router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
       time: Date.now(), // Replace with the actual user ID
       isNew: true,
     };
-
+    
     // If a quiz with the given join code is found, it's valid
     // Return the quizId to the client
     res.json({ valid: true, quizId: quiz.quizId });
@@ -308,7 +309,7 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
     ]);
     
     // Find the user's rank based on their email
-    const userRank = leaderboardData.findIndex(entry => entry.userId === userEmail)+1;
+    const userRank = leaderboardData.findIndex(entry => entry.userId === userEmail);
     
     //res.json({ leaderboardData, userRank });
     res.render('leaderboard', {leaderboardData, userRank,title:'Leaderboard',currentPage:'leaderboard'});
@@ -318,10 +319,31 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
     res.status(500).send('An error occurred');
   }
 });
-[]
 
 
+router.get('/getaiquiz', async (req, res) => {
+  try {
+    let topic = req.query.topic;
+    if (topic.length < 3) {
+      res.status(400).json({ error: 'Topic length must be at least 3 characters' });
+      return; // Exit the function if the topic length is less than 3
+    }
 
+    const apiUrl = process.env.OPENAIAPI;
+    const response = await fetch(`${apiUrl}?str=${topic}`);
+
+    if (response.ok) {
+      const jsonData = await response.json();
+      res.status(200).json(JSON.stringify(jsonData));
+    } else {
+      console.error('Error making the API request:', response.status, response.statusText);
+      res.status(response.status).json({ error: `API request failed with status ${response.status}` });
+    }
+  } catch (error) {
+    console.error('Internal Server Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 
 

@@ -16,24 +16,20 @@
             
       <% quizzes.forEach(quiz => { %>
         
-                <div class="rounded overflow-hidden shadow-lg">
+                <div class="rounded overflow-hidden shadow-lg transform scale-100 hover:scale-105 transition-transform ease-in-out">
         
                     <a href="/join?quizId=<%= quiz.quizId %>"></a>
                     <div class="relative">
                         <a href="/join?quizId=<%= quiz.quizId %>">
-                            <img class="w-full"
-                                src="https://images.pexels.com/photos/196667/pexels-photo-196667.jpeg?auto=compress&amp;cs=tinysrgb&amp;dpr=1&amp;w=500"
-                                alt="Sunset in the mountains">
+                          <img class="w-full" src="/images/image<%= Math.floor(Math.random() * 10) + 1 %>.jpg" alt="<%= quiz.title %>" />
+                    
                             <div
                                 class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
                             </div>
                         </a>
-                        <a href="/join?quizId=<%= quiz.quizId %>">
-                            <div
-                                class="absolute bottom-0 left-0 bg-indigo-600 px-10 py-2 text-white text-sm hover:bg-black hover:text-indigo-600 transition duration-500 ease-in-out">
+                            <div onclick="playquiz(<%= quiz.quizId %>)" class="absolute bottom-0 left-0 bg-indigo-600 px-10 py-2 text-white text-sm hover:bg-black hover:text-indigo-600 transition duration-500 ease-in-out">
                                 Play Quiz
                             </div>
-                        </a>
         
                         <a href="">
                             <div
@@ -79,5 +75,36 @@
 </div>
     <!-- </ul> -->
   </div>
+
+  <script>
+    function playquiz(quizid) {
+
+    // Send an API request to validate the join code
+    fetch('/validateJoinCode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ joinCode: quizid }),
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.valid) {
+            // Redirect to the quiz page with the retrieved quiz ID
+            
+          window.location.href = '/joinquiz/' + data.quizId;
+        } else {
+            alert('Invalid Join Code. Please try again.');
+        }
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+    });
+
+  }
+
+  </script>
 </body>
 </html>
