@@ -6,6 +6,7 @@ import router from './authRoutes.mjs';
 import path, { join } from 'path';
 import moment from "moment-timezone";
 import jwt from "jsonwebtoken";
+import fetch from "node-fetch";
 // Route to serve the addquiz.html file
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
