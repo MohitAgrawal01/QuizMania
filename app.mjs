@@ -8,7 +8,8 @@ import authRoutes from './routes/authRoutes.mjs';
 import quizRoutes from './routes/quizRoutes.mjs'; 
 import session from 'express-session';
 import checkUserLogin from './middleware/userMiddleware.mjs';
-import quizzesData from './quizzes.json' assert { type: 'json' };
+import { readFileSync } from "fs";
+const quizzesData = JSON.parse(readFileSync("./quizzes.json"));
 const app = express();
 
 dotenv.config();
