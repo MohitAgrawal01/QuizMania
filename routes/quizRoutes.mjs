@@ -334,7 +334,11 @@ router.get('/getaiquiz', async (req, res) => {
     const response = await fetch(`${apiUrl}?str=${topic}`);
 
     if (response.ok) {
+      
       const jsonData = await response.json();
+      if(jsonData.error){
+        return res.status(200).json({error:jsonData.error});
+      }
       res.status(200).json(JSON.stringify(jsonData));
     } else {
       console.error('Error making the API request:', response.status, response.statusText);

@@ -122,6 +122,7 @@
                     </div>
                 </div>
                 <div class="col-md-2"></div>
+                <p id="errorText" class="text-center mt-5" style="color: red;"></p>
                 <div id="loading-spinner" ng-if="loading">
                     <div class="spinner-border text-primary" role="status">
                         <span class="sr-only">Loading...</span>
@@ -186,8 +187,8 @@
                                 $scope.startCountdown(5); // Set initial countdown value
                             } else {
 
-                                if (urlParams.get('topic').length < 3) {
-                                    alert("Topic length must be atleast 3 to process your request");
+                                if (urlParams.get('topic').length < 1) {
+                                    alert("Topic length must be atleast 2 to process your request");
                                     $('#authenticated').hide();
                                     window.location('/createAIQuiz');
                                 }
@@ -302,7 +303,13 @@
                         method: 'GET',
                         contentType: 'application/json',
                         success: function (response) {
-                            console.log(typeof response)
+                           if(response.error){
+                            $scope.$apply(function(){
+                                $scope.loading = false;
+                            })
+                            document.getElementById('errorText').innerText = response.error;
+                            return alert(response.error);
+                           }
                             // document.getElementById('quizTopic').value = urlParams.get('topic');
 
                             var json = JSON.parse(response);

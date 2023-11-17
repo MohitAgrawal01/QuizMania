@@ -65,7 +65,7 @@
 
               window.location.href = "/joinquiz/" + data.quizId;
             } else {
-              alert("Invalid Join Code. Please try again.");
+              alert(data.message);
             }
           })
           .catch(function (error) {

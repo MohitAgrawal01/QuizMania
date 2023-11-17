@@ -88,11 +88,11 @@
                 var topic = document.getElementById('aiquiztopic').value;
               
              
-                        if (topic.length>3 && topic.length<25) {
+                        if (topic.length>1 && topic.length<30) {
                         
                             $window.location.href = ('/aiquiz/?topic=' + topic);
                         } else {
-                            alert('Topic Length must be atleast 3 and atmost 25');
+                            alert('Topic Length must be atleast 2 and atmost 30');
                         }
             };
         });
