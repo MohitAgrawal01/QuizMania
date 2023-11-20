@@ -27,7 +27,7 @@
                                 class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25">
                             </div>
                         </a>
-                            <div onclick="playquiz(<%= quiz.quizId %>)" class="absolute bottom-0 left-0 bg-indigo-600 px-10 py-2 text-white text-sm hover:bg-black hover:text-indigo-600 transition duration-500 ease-in-out">
+                            <div onclick="checkplay(<%= quiz.quizId %>)" class="absolute bottom-0 left-0 bg-indigo-600 px-10 py-2 text-white text-sm hover:bg-black hover:text-indigo-600 transition duration-500 ease-in-out">
                                 Play Quiz
                             </div>
         
@@ -77,6 +77,54 @@
   </div>
 
   <script>
+
+
+function checkplay(joinCode) {
+    
+
+    // Send an API request to validate the join code
+    fetch('/checkuserplay', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quizid: joinCode }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            if (confirm(data.message + ". Do you want to Continue?")) {
+                // If the user confirms, make a GET request to /playbyid/{quizid}
+                fetch('/playbyid/' + data.playId)
+                .then(response => response.json())
+                .then(playData => {
+                    if (playData.status) {
+                        // Redirect to /joinquiz/{joincode} if the status is true
+                        window.location.href = '/joinquiz/' + playData.quizId;
+                    } else {
+                        // Show alert with a message if the status is false
+                        alert(playData.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                // User chose not to continue
+                playquiz(joinCode);
+            }
+        } else {
+            // Continue with the join form submission
+            playquiz(joinCode);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+
+
     function playquiz(quizid) {
 
     // Send an API request to validate the join code

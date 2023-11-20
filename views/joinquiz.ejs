@@ -92,11 +92,16 @@
         <div class="d-flex justify-content-end mb-4 me-4">
             <button class="btn btn-primary" id="nextQuestion">Next</button>
         </div>
+
+        <div class="d-flex justify-content-center mb-4 me-4">
+            <button class="btn btn-primary" id="endquiz">END QUIZ</button>
+        </div>
         
         
     <script>
         const quizForm = document.getElementById('quizForm');
         const nextQuestionButton = document.getElementById('nextQuestion');
+        const endquizButton = document.getElementById('endquiz');
         const questionText = document.getElementById('question');
         const timerDisplay = document.getElementById('timer');
         let questionTimer;
@@ -156,9 +161,9 @@
                 return response.json();
             })
             .then(data => {
-                console.log(data);
+               
                 if(data.message=="quiz completed"){
-                    window.location = `/${quizId}/leaderboard`;
+                    window.location.replace = `/${quizId}/leaderboard`;
 
                     return ;
                 }
@@ -181,24 +186,22 @@
                     document.getElementById('option3').nextElementSibling.textContent = data.options[2];
                     document.getElementById('option4').nextElementSibling.textContent = data.options[3];
                     timeLeft = data.timeleft;
-                    console.log(data.timeleft);
                 } else {
-                    window.location.href = '/home';
+                    window.location.replace = `/${quizId}/leaderboard`;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-           
-       //     window.location.href = '/join';
+                 window.location.href = '/dashboard';
             });
         }
     
-         async function submitAnswer(answer) { 
+         async function submitAnswer(answer,terminate=false) { 
             clearInterval(questionTimer); // Clear the timer when the user submits an answer
             timeLeft = 10; // Reset the timer
-    
+            var apiPath = (terminate==true)?"terminate":"submitQuestion";
             try {
-                const response = await fetch(`/submitQuestion/${quizId}`, {
+                const response = await fetch(`/${apiPath}/${quizId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -217,25 +220,31 @@
 
                 document.getElementById('userscore').innerHTML = 'Score: ' + quizscore;
                 
-                console.log(data);
+              
                 var radioButton = document.querySelector('input[name="answer"]:checked');
+                if(radioButton){
                 var divContainer = radioButton.parentNode.parentNode; // Assuming the div is two levels up
-            
+                }
                
                 if(data.lastAnswerCorrect==true){
                     divContainer.style.backgroundColor = '#2ED910';
 
                 }else{
+                    if(radioButton){
                     divContainer.style.backgroundColor = '#D93010';
+                    }
                     document.querySelector('input[name="answer"][value="' + (data.correctAnswer) + '"]').parentNode.parentNode.style.backgroundColor="#2ED910";
-                    console.log(data.correctAnswer)
+                    
                 }   
                
+                window.history.pushState({}, '', '/'+quizId+'/leaderboard');
 
                     setTimeout(()=>{
                         if (data.message) {
                         alert(`Quiz finished. Your score: ${data.score}`);
-                        window.location = `/${quizId}/leaderboard`;
+                        window.history.pushState({}, '', '/' + quizId+'/leaderboard');
+                window.location.reload(); 
+            
 
                     }
                     },1000)
@@ -261,6 +270,19 @@
                 submitAnswer("none"); // Submit "none" if no answer is selected
                 
             }
+        });
+
+        endquizButton.addEventListener('click', () => {
+
+            if(confirm("Are you confirm to submit Quiz?")){
+            const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+            if (selectedAnswer) {
+                submitAnswer(selectedAnswer.value,true);
+            } else {
+    
+                submitAnswer("none",true); // Submit "none" if no answer is selected
+                
+            }}
         });
     
         // Load the first question when the page loads

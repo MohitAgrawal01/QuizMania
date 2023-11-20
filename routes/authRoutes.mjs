@@ -9,8 +9,12 @@ import bcrypt from 'bcrypt'; // Import bcrypt
 import cookieParser from 'cookie-parser';
 import sendotp from '../smtp.mjs';
 import checkUserLogin from '../middleware/userMiddleware.mjs';
+import useragent from 'express-useragent';
+import requestIp from 'request-ip';
+import LoginAttempt from '../models/logs.mjs';
 dotenv.config();
 
+router.use(useragent.express());
 
 router.get("/sendotp/:email", (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000);
@@ -68,39 +72,63 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
+  
+    const userIp = requestIp.getClientIp(req);
+    const userAgent = req.useragent.source;
+  
     if (!validateInput(email) || !validateInput(password)) {
-        return res.status(400).json({ success: false, message: 'Please provide valid email and password' });
+      return res.status(400).json({ success: false, message: 'Please provide valid email and password' });
     }
-
+  
     try {
-        const user = await User.findOne({ email });
-
-        if (user) {
-            bcrypt.compare(password, user.password, (err, passwordMatch) => {
-                if (err || !passwordMatch) {
-                    res.status(401).json({ success: false, message: 'Login failed' });
-                } else {
-                    const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
-                        expiresIn: '7d',
-                    });
-
-                    const maxAge = 604800000;
-
-                    res.setHeader('Set-Cookie', `jwt=${token}; HttpOnly; Max-Age=${maxAge}; Path=/`);
-
-                    res.json({ success: true, message: 'Login successful', user });
-                }
-            });
-        } else {
+      const user = await User.findOne({ email });
+  
+      if (user) {
+        bcrypt.compare(password, user.password, async (err, passwordMatch) => {
+          if (err || !passwordMatch) {
+            logLoginAttempt(email, userIp, userAgent, false);
             res.status(401).json({ success: false, message: 'Login failed' });
-        }
-    } catch (error) {
-        console.error('Login Error:', error);
-        res.status(500).json({ success: false, message: 'An error occurred' });
-    }
-});
+          } else {
+            // Update lastLoggedIn with the current time
+            user.lastLoggedIn = new Date();
+            user.lastLoginIp = userIp;
+            user.lastLoginUserAgent = userAgent;
 
+            await user.save();
+  
+            const token = jwt.sign({ email: user.email, username: user.username }, process.env.JWT_SECRET, {
+              expiresIn: '7d',
+            });
+  
+            const maxAge = 604800000;
+  
+            logLoginAttempt(email, userIp, userAgent, true);
+            res.setHeader('Set-Cookie', `jwt=${token}; HttpOnly; Max-Age=${maxAge}; Path=/`);
+            res.json({ success: true, message: 'Login successful', user });
+          }
+        });
+      } else {
+        logLoginAttempt(email, userIp, userAgent, false);
+        res.status(401).json({ success: false, message: 'Login failed' });
+      }
+    } catch (error) {
+      console.error('Login Error:', error);
+      res.status(500).json({ success: false, message: 'An error occurred' });
+    }
+  });
+function logLoginAttempt(email, userIp, userAgent, success) {
+    const loginAttempt = new LoginAttempt({
+        email,
+        userIp,
+        userAgent,
+        success,
+        timestamp: new Date(),
+    });
+
+    loginAttempt.save()
+        .then(result => console.log('New Login attempt logged'))
+        .catch(error => console.error('Error logging login attempt:', error));
+}
 router.get('/logout', (req, res) => {
     res.clearCookie('jwt');
     res.redirect('/dashboard');
@@ -120,7 +148,7 @@ router.get('/profile', checkUserLogin, async (req, res) => {
       // Fetch user email and username from MongoDB
       const user = await User.find({ email }, 'email username');
       if (user) {
-        //console.log(user);
+       
         res.json({ email: user[0].email, username: user[0].username , authenticated: true});
       } else {
         res.status(404).json({ message: 'User not found',authenticated: false });

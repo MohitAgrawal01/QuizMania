@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import moment  from "moment-timezone";
 const quizSchema = new mongoose.Schema({
   quizId: String,
+  isRandom: String,
+  singleTime: String,
   quizTopic: {
     type: String,
     required: true,

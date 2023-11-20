@@ -121,7 +121,20 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-2"></div>
+                <div class="col-md-2 mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" onclick="document.getElementById('checkboxValue').innerHTML=document.getElementById('checkboxValue').innerHTML=='no'?'yes':'no'" type="checkbox" id="randomQuestionCheckbox" style="border: 2px solid black;" ng-model="randomQuestion">
+                        <label class="form-check-label" for="randomQuestionCheckbox">
+                          Include Random Question Generation
+                        </label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" onclick="document.getElementById('checkboxValue2').innerHTML=document.getElementById('checkboxValue2').innerHTML=='no'?'yes':'no'" type="checkbox" id="AttemptsCheckbox" style="border: 2px solid black;" ng-model="AttempsBox">
+                        <label class="form-check-label" for="AttemptsCheckbox">
+                          Single Time game play
+                        </label>
+                      </div>
+                </div>
                 <p id="errorText" class="text-center mt-5" style="color: red;"></p>
                 <div id="loading-spinner" ng-if="loading">
                     <div class="spinner-border text-primary" role="status">
@@ -150,6 +163,12 @@
                                         {{option.text}}<br></span>
                                     <strong>Correct Answer:</strong> {{previewQuestion.answer}}
                                 </div>
+                                <div>
+                                    Randomize Questions: <span id="checkboxValue">no</span>
+                                 </div> 
+                                 <div>
+                                    Single Time Play: <span id="checkboxValue2">no</span>
+                                  </div>    
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -272,7 +291,9 @@
                         contentType: 'application/json',
                         data: JSON.stringify({
                             quizTopic: document.getElementById('quizTopic').value,
-                            questions: transformedQuestions
+                            questions: transformedQuestions,
+                            isRandom: document.getElementById('checkboxValue').innerHTML,
+                            singleTime: document.getElementById('checkboxValue2').innerHTML,
                         }),
                         success: function (response) {
 

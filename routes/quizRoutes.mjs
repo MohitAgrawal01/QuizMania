@@ -7,18 +7,29 @@ import path, { join } from 'path';
 import moment from "moment-timezone";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
+import useragent from 'express-useragent';
+import requestIp from 'request-ip';
 // Route to serve the addquiz.html file
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 
 router.post('/addquiz', checkUserLogin, async (req, res) => {
-  const { quizTopic, questions } = req.body;
+  const { quizTopic, questions,isRandom,singleTime } = req.body;
 
   if (!quizTopic || !Array.isArray(questions) || questions.length === 0 || quizTopic.length<3) {
     return res.status(400).json({ message: 'Invalid quiz data format' });
   }
 
+  if (isRandom === "yes" || isRandom === "no");
+  else {
+    return res.status(400).json({ message: 'Invalid quiz type' });
+  }
+
+  if (singleTime === "yes" || singleTime === "no");
+  else {
+    return res.status(400).json({ message: 'Invalid quiz play value' });
+  }
   for (const question of questions) {
     if (
       !question.question ||
@@ -41,11 +52,13 @@ router.post('/addquiz', checkUserLogin, async (req, res) => {
         const decodedToken = jwt.verify(jwtCookie, process.env.JWT_SECRET);
         const email = decodedToken.email;
         const creationTime = moment().tz("Asia/Kolkata").format();
-        console.log("Creation Time:", creationTime);
+      
         const quiz = new Quiz({
           quizId,
+          isRandom,
           quizTopic,
           questions,
+          singleTime,
           createdBy: email,
           creationTime, // Adding creationTime field with the current timestamp
         });
@@ -74,27 +87,21 @@ router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
 
   // Check if req.session.quiz is defined
   if (!req.session.quiz) {
-    return res.status(401).json({ error: 'Invalid Quiz Session' });
+    return res.status(200).json({ error: 'Invalid Quiz Session' });
   }
 
-  console.log(quizId)
-  console.log(req.session.quiz.joinCode)
   // Verify that the requested quizId matches the joinCode stored in the session
   if (quizId != req.session.quiz.joinCode) {
     return res.status(401).json({ error: 'Invalid Quiz Session2' });
   }
 
   try {
-    const quiz = await Quiz.findOne({ quizId }).exec();
-
-    if (!quiz) {
-      return res.status(404).json({ error: 'Quiz not found' });
-    }
+   
     if(req.session.quiz.isNew==true){
       req.session.quiz.isNew = false;
       req.session.quiz.time = Date.now();
     }
-    const questions = quiz.questions;
+    const questions = req.session.quiz.questions;
 
     // Calculate the timeLeft based on the time elapsed since the user started the quiz
     let timeLeft = 0;
@@ -131,14 +138,9 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
   const userSession = req.session.quiz;
 
   try {
-    const quiz = await Quiz.findOne({ quizId }).exec();
+  
 
-    if (!quiz) {
-      // Return a Not Found response if the requested quiz doesn't exist
-      return res.status(404).json({ error: 'Quiz not found' });
-    }
-
-    const questions = quiz.questions;
+    const questions = req.session.quiz.questions;
     if(questions.length==req.session.quiz.currentQuestionIndex){
         return res.json({score:req.session.quiz.userScore,message: 'Quiz finished'})
     }
@@ -157,20 +159,22 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
     userSession.currentQuestionIndex++;
 
     if (userSession.currentQuestionIndex < questions.length) {
-      // Provide the next question if more questions are available
-      //const nextQuestion = questions[userSession.currentQuestionIndex];
+    
+      updateScoreAndStatus(userSession.playId, userSession.userScore, 'incomplete',userSession.currentQuestionIndex);
       res.json({
         currentQuestion:req.session.quiz.currentQuestionIndex,
         totalQuestions:questions.length,
         score:userSession.userScore,
         correctAnswer: currentQuestion.answer.toLowerCase(),
-        lastAnswerCorrect: isAnswerCorrect, // Indicate if the last answer was correct
+        lastAnswerCorrect: isAnswerCorrect,
       });
     } else {
+
+    const userIp = requestIp.getClientIp(req);
+    const userAgent = req.useragent.source;
+    updateScoreAndStatus(userSession.playId, userSession.userScore, 'completed',userSession.currentQuestionIndex);
       // Quiz finished, save the user's score
       const score = userSession.userScore;
-      const userScore = new UserScore({ quizId, userId: userSession.userId, score });
-      await userScore.save();
 
       res.json({
         currentQuestion:req.session.quiz.currentQuestionIndex,
@@ -178,12 +182,11 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
         score,
         message: 'Quiz finished',
         correctAnswer: currentQuestion.answer.toLowerCase(),
-        lastAnswerCorrect: isAnswerCorrect, // Indicate if the last answer was correct
+        lastAnswerCorrect: isAnswerCorrect, 
       });
     }
   } catch (error) {
-   // console.log(error)
-    // Handle any unexpected errors with an Internal Server Error response
+  
     res.status(500).json({ error: 'An error occurred' });
   }
 });
@@ -199,7 +202,7 @@ router.get('/myquizes', async (req, res) => {
       try {
         // Retrieve quizzes including creationTime
         const userQuizzes = await Quiz.find({ createdBy: userId }, 'quizId createdBy creationTime quizTopic questions');
-        console.log(userQuizzes);
+       
         // Map quizzes to include the creationTime in a more readable format
         const quizzesWithFormattedTime = userQuizzes.map((quiz) => ({
           quizId: quiz.quizId,
@@ -209,13 +212,8 @@ router.get('/myquizes', async (req, res) => {
           numberOfQuestions:quiz.questions.length,
         }));
 
-        // Render the myquizes view with the quizzes
         res.render('myquizes', { quizzes: quizzesWithFormattedTime,title:'Myquizes' ,currentPage:'myquizes'});
 
-        
-
-        // Alternatively, you can send the JSON response
-        // res.status(200).json({ quizzes: quizzesWithFormattedTime });
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while fetching user quizzes.' });
@@ -230,13 +228,134 @@ router.get('/myquizes', async (req, res) => {
   }
 });
 
+router.post('/terminate/:quizId', checkUserLogin, async (req, res) => {
+  const quizId = req.params.quizId;
+  const userAnswer = req.body.answer; // User's answer received in the request body
+
+  // Check if the session, quiz, or join code is invalid
+  if (!req.session || !req.session.quiz || req.session.quiz.joinCode != quizId) {
+    // Return an Unauthorized response for an invalid quiz session
+    return res.status(401).json({ error: 'Invalid quiz session' });
+  }
+
+  const userSession = req.session.quiz;
+
+  try {
+  
+
+    const questions = req.session.quiz.questions;
+    if(questions.length==req.session.quiz.currentQuestionIndex){
+        return res.json({score:req.session.quiz.userScore,message: 'Quiz finished'})
+    }
+    const currentQuestion = questions[userSession.currentQuestionIndex];
+
+    // Check if the user's answer matches the correct answer
+    const isAnswerCorrect = currentQuestion.answer.toUpperCase() === userAnswer.toUpperCase();
+
+    if (isAnswerCorrect) {
+      // Increment the user's score if the answer is correct
+      userSession.userScore++;
+    }
+
+    // Update current question index
+    req.session.quiz.isNew = true;
+    userSession.currentQuestionIndex++;
+
+    const score = userSession.userScore;
+    updateScoreAndStatus(userSession.playId, score, "terminated",userSession.currentQuestionIndex);
+    req.session.destroy();
+      res.json({
+        currentQuestion:userSession.currentQuestionIndex,
+        totalQuestions:questions.length,
+        score,
+        message: 'Quiz finished',
+        correctAnswer: currentQuestion.answer.toLowerCase(),
+        lastAnswerCorrect: isAnswerCorrect, 
+      });
+
+
+  } catch (error) {
+    console.log(error)
+  
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
+
+
+
+router.post('/checkuserplay',checkUserLogin,async (req,res)=>{
+  const quizId = req.body.quizid;
+  const userToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET); 
+  const userId = userToken.email; // the email is stored in the JWT payload
+ 
+  try {
+    // Use findOne to check if a record with the specified quizId and userId exists
+    const existingRecord = await UserScore.findOne({ quizId, userId, status: 'incomplete' })
+    if(!!existingRecord){
+      return res.status(200).json({status:true,message:"User have an incomplete Attempt for this quiz",playId:existingRecord.playId});
+    }else{
+      return res.status(200).json({status:false,message:"User doesn't have an incomplete Attempt for this quiz"});
+    }
+  } catch (error) {
+    console.error('Error checking record:', error);
+    return res.status(400).json({valid:false,message:"We cant process your request right now, Please try again later"});
+  }
+});
+
+
+router.get('/playbyid/:playId',checkUserLogin,async(req,res)=>{
+  try {
+    const playId = req.params.playId;
+
+    // Find the user score details based on the playId
+    const userScore = await UserScore.findOne({ playId });
+
+    if (!userScore) {
+      return res.status(404).json({ message: 'playId not found' });
+    }
+
+    if (!req.session) {
+      req.session = {};
+    }
+
+    const quiz = await Quiz.findOne({ quizId: userScore.quizId }).exec();
+    if (!quiz) {
+      // No quiz found for the given join code, so it's invalid
+      return res.json({ valid: false, message: 'Invalid join code' });
+    }
+
+    var questions = quiz.questions;
+
+    if(quiz.isRandom=="yes"){
+      var shuffleSalt = userScore.shuffleSalt;
+      shuffleArray(questions,shuffleSalt);
+    }
+
+    req.session.quiz = {
+      currentQuestionIndex: userScore.AttemptedCount,
+      questions,
+      userScore: userScore.score,
+      joinCode: userScore.quizId,
+      userId: userScore.userId, 
+      time: Date.now(),
+      isNew: true,
+      playId,
+    };
+
+    // Send the user score details in the response
+    res.status(200).json({status:true,quizId:userScore.quizId});
+  } catch (error) {
+    console.error('Error retrieving user score:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
   const joinCode = req.body.joinCode;
 
   try {
-    // Use Mongoose to find a quiz with the given quizId (assuming join code is the same as quizId)
+    //assuming join code is the same as quizId
     const quiz = await Quiz.findOne({ quizId: joinCode }).exec();
     if (!quiz) {
       // No quiz found for the given join code, so it's invalid
@@ -244,28 +363,57 @@ router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
     }
 
     // Extract the user's email from the JWT token
-    const userToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET); // Replace with your actual secret key
-    const userEmail = userToken.email; // Assuming the email is stored in the JWT payload
-
+    const userToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET); 
+    const userEmail = userToken.email; // the email is stored in the JWT payload
+    const username = userToken.username;
+    
     // Initialize req.session if it's not already
     if (!req.session) {
       req.session = {};
     }
 
+    
+
+    var questions = quiz.questions;
+    if(quiz.isRandom=="yes"){
+      var shuffleSalt = Math.floor(Math.random() * (30 - 10 + 1)) + 10;
+      shuffleArray(questions,shuffleSalt);
+    }
+
+    if(quiz.singleTime=="yes"){
+      
+      try {
+        // Use findOne to check if a record with the specified quizId and userId exists
+        const existingRecord = await UserScore.findOne({ quizId:joinCode,userId:userEmail});
+       
+        if(!!existingRecord){
+          return res.status(200).json({valid:false,message:"This Quiz can be played single time per user only!!"});
+        }
+      } catch (error) {
+        console.error('Error checking record:', error);
+        return res.status(400).json({valid:false,message:"We cant process your request right now, Please try again later"});
+      }
+    }
+    const playId = generateSevenDigitNumericId();
     req.session.quiz = {
       currentQuestionIndex: 0,
+      questions,
       userScore: 0,
       joinCode,
-      userId: userEmail, // Use the email as the user ID
-      time: Date.now(), // Replace with the actual user ID
+      userId: userEmail, 
+      time: Date.now(),
       isNew: true,
+      playId,
     };
-    
-    // If a quiz with the given join code is found, it's valid
-    // Return the quizId to the client
+   
+
+    const userIp = requestIp.getClientIp(req);
+    const userAgent = req.useragent.source;
+
+    addDefaultData(joinCode, userEmail,username, playId,userIp,userAgent,questions.length,shuffleSalt);
     res.json({ valid: true, quizId: quiz.quizId });
   } catch (err) {
-    // Handle any database error
+    
     console.error(err);
     res.status(500).json({ error: 'Database error' });
   }
@@ -276,20 +424,20 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
   const quizId = req.params.quizId;
   try {
     // Extract the user's email from the JWT token
-    const userToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET); // Replace process.env.JWT_SECRET with your actual secret key
-    const userEmail = userToken.email; // Assuming the email is stored in the JWT payload
-
+    const userToken = jwt.verify(req.cookies.jwt, process.env.JWT_SECRET); 
+    const userEmail = userToken.email; 
     const leaderboardData = await UserScore.aggregate([
       {
         $match: { quizId: quizId }
       },
       {
-        $sort: { userId: 1, score: -1 }
+        $sort: { userId: 1, score: -1, username: 1 } // Include username in the sorting
       },
       {
         $group: {
           _id: "$userId",
           highestScore: { $first: "$score" },
+          username: { $first: "$username" },
           quizId: { $first: "$quizId" }
         }
       },
@@ -298,6 +446,7 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
           _id: 0,
           quizId: 1,
           userId: "$_id",
+          username: 1, // Include username in the projection
           score: "$highestScore"
         }
       },
@@ -308,11 +457,9 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
         $limit: 10
       }
     ]);
-    
     // Find the user's rank based on their email
     const userRank = leaderboardData.findIndex(entry => entry.userId === userEmail);
     
-    //res.json({ leaderboardData, userRank });
     res.render('leaderboard', {leaderboardData, userRank,title:'Leaderboard',currentPage:'leaderboard'});
 
   } catch (err) {
@@ -327,7 +474,7 @@ router.get('/getaiquiz', async (req, res) => {
     let topic = req.query.topic;
     if (topic.length < 3) {
       res.status(400).json({ error: 'Topic length must be at least 3 characters' });
-      return; // Exit the function if the topic length is less than 3
+      return; 
     }
 
     const apiUrl = process.env.OPENAIAPI;
@@ -350,15 +497,80 @@ router.get('/getaiquiz', async (req, res) => {
   }
 });
 
+const shuffleArray = (array, shuffleSalt) => {
+  const seededRandom = (max) => {
+    let seed = parseInt(shuffleSalt, 36) || 0;
+    const x = Math.sin(seed++) * 10000;
+    return Math.floor((x - Math.floor(x)) * (max + 1));
+  };
 
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = seededRandom(i);
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+};
 
 // Helper function to generate a random quiz ID
 function generateSevenDigitNumericId() {
   const min = 1000000; 
   const max = 9999999; 
-  // Generate a random number
   const numericId = Math.floor(Math.random() * (max - min + 1)) + min;
   return numericId.toString(); // Convert the number to a string
+}
+
+
+async function addDefaultData(quizId, userId,username, playId,userIp,userAgent,TotalCount,shuffleSalt) {
+  try {
+    // Check if there is already a record for the given playId
+    const existingRecord = await UserScore.findOne({ playId });
+
+    if (!existingRecord) {
+      // If no record exists, create a new one with default data
+      const defaultData = {
+        quizId,
+        userId,
+        score: 0,
+        AttemptedCount: 0,
+        TotalCount,
+        userIp,
+        userAgent,
+        username,
+        playId,
+        status: 'incomplete',
+        shuffleSalt, 
+        timestamp: moment().tz('Asia/Kolkata').format(),
+      };
+
+      const newUserScore = new UserScore(defaultData);
+      await newUserScore.save();
+    }
+  } catch (error) {
+    console.error('Error adding default data:', error);
+  }
+}
+
+// Function to update userScore and status by playId
+async function updateScoreAndStatus(playId, newScore, newStatus,qCount) {
+  try {
+    // Find the record based on playId
+    const userScore = await UserScore.findOne({ playId });
+
+    if (userScore) {
+      // Update score and status
+      userScore.score = newScore;
+      userScore.status = newStatus;
+      userScore.AttemptedCount = qCount;
+
+      // You may want to update other fields as needed
+
+      // Save the updated record
+      await userScore.save();
+    } else {
+      console.error('UserScore not found for playId:', playId);
+    }
+  } catch (error) {
+    console.error('Error updating score and status:', error);
+  }
 }
 
 export default router;

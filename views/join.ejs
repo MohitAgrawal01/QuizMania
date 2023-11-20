@@ -32,7 +32,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Join a Quiz</h5>
-                        <form ng-submit="joinFormSubmit()">
+                        <form ng-submit="checkplay()">
                             <div class="form-group">
                                 <label for="join-code">Enter Join Code:</label>
                                 <input type="text" class="form-control" ng-model="joinCode" name="joinCode" id="joinCode" required>
@@ -102,7 +102,46 @@
                         console.error('Error:', error);
                     });
             };
-        });
+
+            $scope.checkplay = function () {
+  
+        // Send an API request to validate the join code
+        $http.post('/checkuserplay', { quizid: document.getElementById('joinCode').value })
+            .then(function (response) {
+                var data = response.data;
+                if (data.status) {
+                    if (confirm(data.message + ". Do you want to Continue?")) {
+                        // If the user confirms, make a GET request to /playbyid/{quizid}
+                        $http.get('/playbyid/' + data.playId)
+                            .then(function (response) {
+                                var playData = response.data;
+
+                                if (playData.status) {
+                                    // Redirect to /joinquiz/{joincode} if the status is true
+                                    $window.location.href = ('/joinquiz/' + playData.quizId);
+                                } else {
+                                    // Show alert with a message if the status is false
+                                    alert(playData.message);
+                                }
+                            })
+                            .catch(function (error) {
+                                console.error('Error:', error);
+                            });
+                    } else {
+                        // User chose not to continue
+                        $scope.joinFormSubmit();
+                    }
+                } else {
+                    // Continue with the join form submission
+                    $scope.joinFormSubmit();
+                }
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+            });
+    };
+
+});
     </script>
 </body>
 
