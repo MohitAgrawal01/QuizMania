@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import moment  from "moment-timezone";
+import moment from "moment-timezone";
+
 const quizSchema = new mongoose.Schema({
   quizId: String,
   isRandom: String,
@@ -14,11 +15,15 @@ const quizSchema = new mongoose.Schema({
       question: String,
       options: [String],
       answer: String,
+      imageUrl: {
+        type: String,
+        default: null,
+      },
     },
   ],
   creationTime: {
     type: Date,
-    default: moment().tz("Asia/Kolkata").format(), // Use moment-timezone to format the date in Asia/Kolkata time zone
+    default: moment().tz("Asia/Kolkata").format(),
   },
 });
 

@@ -15,11 +15,13 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 
 router.post('/addquiz', checkUserLogin, async (req, res) => {
-  const { quizTopic, questions,isRandom,singleTime } = req.body;
+  const { quizTopic, questions,isRandom,singleTime,imageUrl } = req.body;
 
   if (!quizTopic || !Array.isArray(questions) || questions.length === 0 || quizTopic.length<3) {
     return res.status(400).json({ message: 'Invalid quiz data format' });
   }
+
+
 
   if (isRandom === "yes" || isRandom === "no");
   else {
@@ -34,10 +36,14 @@ router.post('/addquiz', checkUserLogin, async (req, res) => {
     if (
       !question.question ||
       !Array.isArray(question.options) ||
-      question.options.length !== 4 ||
       !question.answer
     ) {
       return res.status(400).json({ message: 'Invalid question format' });
+    }
+    if(question.imageUrl){
+      if(question.imageUrl.length<10){
+        return res.status(400).json({ message: 'Invalid Image URL' });
+      }
     }
   }
 
@@ -115,8 +121,10 @@ router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
       timeLeft = 10 - Math.floor(elapsedTimeInMilliseconds / 1000); // Convert to seconds and round down
     }
 
-    const firstQuestion = questions[req.session.quiz.currentQuestionIndex]; // Assuming this is the first question
-    res.json({ question: firstQuestion.question, options: firstQuestion.options, timeleft: timeLeft, currentQuestion:req.session.quiz.currentQuestionIndex+1,totalQuestions:questions.length, score:req.session.quiz.userScore});
+    
+    const CurQuestion = questions[req.session.quiz.currentQuestionIndex]; 
+
+    res.json({ question: CurQuestion.question, options: CurQuestion.options,imageUrl:CurQuestion.imageUrl,test:2, timeleft: timeLeft, currentQuestion:req.session.quiz.currentQuestionIndex+1,totalQuestions:questions.length, score:req.session.quiz.userScore});
   } catch (err) {
     return res.status(500).json({ error: 'Error while querying the database' });
   }
@@ -372,7 +380,6 @@ router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
       req.session = {};
     }
 
-    
 
     var questions = quiz.questions;
     if(quiz.isRandom=="yes"){

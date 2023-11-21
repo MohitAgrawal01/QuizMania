@@ -9,9 +9,12 @@ import quizRoutes from './routes/quizRoutes.mjs';
 import session from 'express-session';
 import checkUserLogin from './middleware/userMiddleware.mjs';
 import { readFileSync } from "fs";
+
+import fileUploadRoutes from './routes/fileUploadRoutes.mjs';
 const quizzesData = JSON.parse(readFileSync("./quizzes.json"));
 const app = express();
 
+app.use('/uploads', express.static('public'));
 dotenv.config();
 
 app.use(session({
