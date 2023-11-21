@@ -4,7 +4,7 @@ import express from "express";
 import path from "path";
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, 'public/uploads/'); // Destination folder for uploaded files
+      cb(null, '/public/uploads/'); // Destination folder for uploaded files
     },
     filename: (req, file, cb) => {
       cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
