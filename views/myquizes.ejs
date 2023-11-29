@@ -3,24 +3,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <title>Your Quizzes</title>
 </head>
 <body>
   <div class="container">
     
-    <!-- <ul class="list-group"> -->
+    
       <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
         <div class="max-w-screen-xl mx-auto p-5 sm:p-10 md:p-16">
-          <!-- <h1 class="my-4">Your Quizzes</h1> -->
-          <div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
+         <div class="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-10">
             
       <% quizzes.forEach(quiz => { %>
         
                 <div class="rounded overflow-hidden shadow-lg transform scale-100 hover:scale-105 transition-transform ease-in-out">
         
-                    <a href="/join?quizId=<%= quiz.quizId %>"></a>
+                    
                     <div class="relative">
-                        <a href="/join?quizId=<%= quiz.quizId %>">
+                        <a >
                           <img class="w-full" src="/images/image<%= Math.floor(Math.random() * 10) + 1 %>.jpg" alt="<%= quiz.title %>" />
                     
                             <div
@@ -41,11 +41,17 @@
                     </div>
                     <div class="px-6 py-4">
         
-                        <a href="" class="font-semibold text-lg inline-block hover:text-indigo-600 transition duration-500 ease-in-out"><%=quiz.quizTopic%></a>
+                        <div class="flex flex-row items-center">
+                            <a href="" class="font-semibold text-lg inline-block hover:text-indigo-600 transition duration-500 ease-in-out"><%=quiz.quizTopic%></a>
+                        <a href="#" onclick="deleteQuiz(<%= quiz.quizId %>)" class="ml-auto text-red-500 hover:text-red-700 transition duration-300 ease-in-out">
+                            <i class="fas fa-trash-alt"></i>
+                          </a>
+                        </div>
                         <p class="text-gray-500 text-sm">
                           <%= quiz.quizId %>
                         </p>
                     </div>
+                    
                     <div class="px-6 py-4 flex flex-row items-center">
                         <span href="#" class="py-1 text-sm font-regular text-gray-900 mr-1 flex flex-row items-center">
                             <svg height="13px" width="13px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
@@ -62,18 +68,10 @@
                             <span class="ml-1"><%= quiz.creationTime %></span></span>
                     </div>
                 </div>
-                
-        <!-- <li class="list-group-item">
-          <strong>Quiz ID:</strong> <%= quiz.quizId %><br>
-          <strong>Created By:</strong> <%= quiz.createdBy %><br>
-          <strong>Creation Time:</strong> <%= quiz.creationTime %><br>
-          <strong>Quiz Topic:</strong> <%= quiz.quizTopic %>
-        </li> -->
       <% }); %>
     </div>
   </div>
 </div>
-    <!-- </ul> -->
   </div>
 
   <script>
@@ -82,7 +80,6 @@
 function checkplay(joinCode) {
     
 
-    // Send an API request to validate the join code
     fetch('/checkuserplay', {
         method: 'POST',
         headers: {
@@ -110,7 +107,7 @@ function checkplay(joinCode) {
                     console.error('Error:', error);
                 });
             } else {
-                // User chose not to continue
+                // User choose not to continue
                 playquiz(joinCode);
             }
         } else {
@@ -127,7 +124,6 @@ function checkplay(joinCode) {
 
     function playquiz(quizid) {
 
-    // Send an API request to validate the join code
     fetch('/validateJoinCode', {
         method: 'POST',
         headers: {
@@ -140,7 +136,6 @@ function checkplay(joinCode) {
     })
     .then(function(data) {
         if (data.valid) {
-            // Redirect to the quiz page with the retrieved quiz ID
             
           window.location.href = '/joinquiz/' + data.quizId;
         } else {
@@ -153,6 +148,32 @@ function checkplay(joinCode) {
 
   }
 
+
+    function deleteQuiz(quizid) {
+
+   fetch('/deleteQuiz', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quizId: quizid }),
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.message) {
+            alert(data.message);
+           location.reload();
+        } else {
+          alert(data.error);
+        }
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+    });
+
+  }
   </script>
 </body>
 </html>

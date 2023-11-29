@@ -1,10 +1,14 @@
+<%- include('navbar.ejs') %>
+
+
 <!DOCTYPE html>
 <html lang="en" ng-app="quizApp">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title ng-bind="title"></title>
+    <title><%=title %></title>
+    
    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.angularjs.org/1.8.2/angular.min.js"></script>
@@ -15,11 +19,7 @@
 </head>
 
 <body ng-controller="JoinController">
-    <!-- Include the navbar only if the user is authenticated -->
-   
-        <%- include('navbar.ejs') %>
 
-    <!-- Add this section for non-authenticated users with dynamic countdown -->
     <div id="notAuthenticatedMessage" class="alert alert-danger text-center" ng-if="!authenticated">
         <p>You are not logged in. 😢</p>
         <p>Please <a href="/login">log in</a> to join a quiz.</p>
@@ -49,16 +49,16 @@
         var app = angular.module('quizApp', []);
 
         app.controller('JoinController', function ($scope, $http, $location, $interval,$window) {
-            $scope.title = ""; // Set your title dynamically
-            $scope.authenticated = false; // Initialize the authentication status
-            $scope.countdownValue = 5; // Set initial countdown value
+       
+            $scope.authenticated = false; // initial authentication status
+            $scope.countdownValue = 5; //  initial countdown value
 
-            // Check if the user is authenticated
+            // Checking if the user is authenticated
             $http.get('/isSessionAuthenticated')
                 .then(function (response) {
                     $scope.authenticated = response.data.authenticated;
 
-                    // Start the dynamic countdown if not authenticated
+                    // Starting the countdown if not authenticated
                     if (!$scope.authenticated) {
                         $scope.startCountdown();
                     }
@@ -79,7 +79,7 @@
                 }, 1000, $scope.countdownValue);
 
                 countdownInterval.then(function () {
-                    // Cleanup function
+                    // resetting the count down value
                     $scope.countdownValue = 0;
                 });
             };
@@ -87,12 +87,11 @@
             $scope.joinFormSubmit = function () {
                 var joinCode = $scope.joinCode;
 
-                // Send an API request to validate the join code
                 $http.post('/validateJoinCode', { joinCode: document.getElementById('joinCode').value })
                     .then(function (response) {
                         var data = response.data;
                         if (data.valid) {
-                            // Redirect to the quiz page with the retrieved quiz ID
+                           
                             $window.location.href = ('/joinquiz/' + data.quizId);
                         } else {
                             alert(data.message);
@@ -105,7 +104,6 @@
 
             $scope.checkplay = function () {
   
-        // Send an API request to validate the join code
         $http.post('/checkuserplay', { quizid: document.getElementById('joinCode').value })
             .then(function (response) {
                 var data = response.data;
@@ -128,7 +126,7 @@
                                 console.error('Error:', error);
                             });
                     } else {
-                        // User chose not to continue
+                        // User choose not to continue
                         $scope.joinFormSubmit();
                     }
                 } else {

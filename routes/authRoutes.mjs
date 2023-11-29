@@ -24,14 +24,45 @@ router.get("/sendotp/:email", (req, res) => {
         // Store code and email in session for verification
         req.session.authCode = code;
         req.session.authemail = req.params.email;
-  
-        // Send success response as JSON
         res.json({ success: true, message: "OTP sent successfully" });
       })
       .catch(error => {
-        // Send error response as JSON
         res.status(500).json({ success: false, message: "Failed to send OTP", error: error.message });
       });
+  });
+
+  router.get("/sendForgotOtp/:email", async (req, res) => {
+    try {
+      // Check if the email exists in the database
+      const existingUser = await User.findOne({ email: req.params.email });
+  
+      if (!existingUser) {
+        return res.status(404).json({ success: false, message: "Email not found" });
+      }
+  
+      // Generate OTP
+      const code = Math.floor(100000 + Math.random() * 900000);
+  
+      req.session.forgot = req.session.forgot || {};
+      // Send OTP
+      sendotp(req.params.email, code,"Forgot Password - QuizMania")
+        .then(success => {
+         
+          // Store code and email in session for verification
+          req.session.forgot.authCode = code;
+          req.session.forgot.authemail = req.params.email;
+  
+          // Send success response as JSON
+          res.json({ success: true, message: "OTP sent successfully" });
+        })
+        .catch(error => {
+          // Send error response as JSON
+          res.status(500).json({ success: false, message: "Failed to send OTP", error: error.message });
+        });
+    } catch (error) {
+      // Handle database query error
+      res.status(500).json({ success: false, message: "Error querying the database", error: error.message });
+    }
   });
 
 
@@ -56,7 +87,6 @@ router.post('/signup', async (req, res) => {
 
             bcrypt.hash(password, saltRounds, async (err, hashedPassword) => {
                 if (err) {
-                  //  console.error(err);
                     res.status(500).json({ success: false, message: 'Signup failed' });
                 } else {
                     const user = await User.create({ username, password: hashedPassword, email });
@@ -65,9 +95,35 @@ router.post('/signup', async (req, res) => {
             });
         }
     } catch (error) {
-       // console.error(error);
         res.status(500).json({ success: false, message: 'An error occurred' });
     }
+});
+
+router.post('/changePassword', async (req, res) => {
+  const {email,otp,password } = req.body;
+
+  try {
+    
+  if(req.session.forgot.authCode==otp && req.session.forgot.authemail==email);
+  else{
+    return res.status(500).json({ success: false, message: 'Invalid OTP' });
+  }
+      // Retrieve the user from the database
+      const user = await User.findOne({ email: req.session.forgot.authemail });
+
+      // Hashing the new password 
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Updating the user's password in the database
+      user.password = hashedPassword;
+      await user.save();
+
+      
+      res.json({ success: true, message: 'Password Reset successful', user });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'An error occurred' });
+}
 });
 
 router.post('/login', async (req, res) => {
@@ -89,7 +145,7 @@ router.post('/login', async (req, res) => {
             logLoginAttempt(email, userIp, userAgent, false);
             res.status(401).json({ success: false, message: 'Login failed' });
           } else {
-            // Update lastLoggedIn with the current time
+            // Updating lastLoggedIn with the current time
             user.lastLoggedIn = new Date();
             user.lastLoginIp = userIp;
             user.lastLoginUserAgent = userAgent;
@@ -154,8 +210,7 @@ router.get('/profile', checkUserLogin, async (req, res) => {
         res.status(404).json({ message: 'User not found',authenticated: false });
       }
     } catch (error) {
-     // console.error('Error fetching user profile:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
+     res.status(500).json({ message: 'Internal Server Error' });
     }
   });
   

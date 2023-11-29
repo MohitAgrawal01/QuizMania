@@ -8,6 +8,9 @@
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="icon" href="/logo.jpg" type="image/jpg">
+
+    <title><%= title %></title>
     <style>
         body {
             background-color: rgba(8, 21, 55, 255);
@@ -24,20 +27,17 @@
 
 <body>
     <div class="container col-md-8 ">
-        <!-- Logo in the top center -->
+    
         <div class="container-fluid">
             <div class="d-flex mt-3">
                 <div id="questionleft" class="bg-secondary text-white p-2 rounded  me-4">
-                    <!-- Content for questionleft div -->
+
                 </div>
                 <div id="userscore" class="bg-dark text-white p-2 rounded  me-4">
                     Score: 0
                 </div>
             </div>
         </div>
-
-
-        <!-- Content for questionleft goes here -->
 
 
         <div class="text-center mt-2">
@@ -69,7 +69,7 @@
             <h2 class="mb-3 text-center" id="question"> Question Loading.....</h2>
         </div>
         <div>
-            <!-- Options with rounded borders, two options in one row -->
+            
             <div class="options row mt-5 text-center" id="optionsContainer">
                 <!-- Options will be dynamically added here based on the number of options -->
             </div>
@@ -116,11 +116,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         function loadOptions(options) {
     const optionsContainer = document.getElementById('optionsContainer');
-    optionsContainer.innerHTML = ''; // Clear previous options
+    optionsContainer.innerHTML = ''; // Clearing previous options
 
     options.forEach((option, index) => {
         const optionId = 'option' + (index + 1);
-        const optionValue = String.fromCharCode(97 + index); // Convert index to ASCII character code
+        const optionValue = String.fromCharCode(97 + index); // Converting index to ASCII character code
 
         const optionDiv = document.createElement('div');
         optionDiv.className = 'col-md-6';
@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function selectRadio(optionId) {
             const radio = document.getElementById(optionId);
             radio.checked = true;
-            // Get the submit button element
+          
             var submitButton = document.getElementById('nextQuestion');
 
             // Disable or enable the submit button based on whether any option is selected
@@ -172,7 +172,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         function clearOptionCheckboxes() {
-    // Get the number of options (assuming it's the same for all questions)
+   
     const numOptions = document.querySelectorAll('.option').length;
 
     for (let i = 1; i <= numOptions; i++) {
@@ -211,8 +211,6 @@ function loadQuestion() {
                     document.getElementById('nextQuestion').innerHTML = "Submit Quiz";
                 }
 
-
-                // Update the content of the divs
                 document.getElementById('questionleft').innerHTML = currentQuestion + '/' + totalQuestion;
                 var quizscore = data.score;
 
@@ -225,10 +223,10 @@ document.getElementById('userscore').innerHTML = 'Score: ' + quizscore;
                 if(data.imageUrl){
                     qImg.src = data.imageUrl;
                    
-                    document.getElementById('openIcon').display = 'block';
+                    document.getElementById('openIcon').style.display = 'block';
                 }else{
                     qImg.src = "https://www.umegaoka.or.jp/wp-content/uploads/no-image.jpg";
-                    document.getElementById('openIcon').display='none';
+                    document.getElementById('openIcon').style.display='none';
                 }
 
 
@@ -304,7 +302,6 @@ document.getElementById('userscore').innerHTML = 'Score: ' + quizscore;
             }
 
             setTimeout(loadQuestion, 2000);
-            // loadQuestion();
         }
 
         nextQuestionButton.addEventListener('click', () => {

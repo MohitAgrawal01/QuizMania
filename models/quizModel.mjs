@@ -19,12 +19,20 @@ const quizSchema = new mongoose.Schema({
         type: String,
         default: null,
       },
+      timerValue: {
+        type: Number,
+        default: 10,
+      },
     },
   ],
   creationTime: {
     type: Date,
     default: moment().tz("Asia/Kolkata").format(),
   },
+  status: {
+    type: String,
+    default: "active", // You can set a default value as per your requirements
+  },
 });
 
-export default mongoose.model('Quiz', quizSchema);
+export default mongoose.model('Quiz', quizSchema);

@@ -52,7 +52,6 @@
 function checkplay(joinCode) {
     
 
-    // Send an API request to validate the join code
     fetch('/checkuserplay', {
         method: 'POST',
         headers: {
@@ -80,7 +79,7 @@ function checkplay(joinCode) {
                     console.error('Error:', error);
                 });
             } else {
-                // User chose not to continue
+                // User choose not to continue
                 playquiz(joinCode);
             }
         } else {
@@ -93,7 +92,6 @@ function checkplay(joinCode) {
     });
 }
       function playquiz(quizid) {
-        // Send an API request to validate the join code
         fetch("/validateJoinCode", {
           method: "POST",
           headers: {
@@ -106,8 +104,6 @@ function checkplay(joinCode) {
           })
           .then(function (data) {
             if (data.valid) {
-              // Redirect to the quiz page with the retrieved quiz ID
-
               window.location.href = "/joinquiz/" + data.quizId;
             } else {
               alert(data.message);
@@ -118,19 +114,16 @@ function checkplay(joinCode) {
           });
       }
 
-      // Fetch authentication status using an API call or your logic
       fetch("/isSessionAuthenticated")
         .then((response) => response.json())
         .then((data) => {
           const isAuthenticated = data.authenticated;
 
-          // Set the display property based on authentication status
           document.getElementById("loginButton").style.display = isAuthenticated
             ? "none"
             : "block";
           document.getElementById("signupButton").style.display =
             isAuthenticated ? "none" : "block";
-          // document.getElementById('userBlock').style.display = isAuthenticated ? 'block' : 'none';
           document.getElementById("userPic").style.display = isAuthenticated
             ? "block"
             : "none";
@@ -138,7 +131,6 @@ function checkplay(joinCode) {
         .catch((error) => {
           console.error("Error fetching authentication status:", error);
         });
-      //fetch User details
 
       fetch("/profile")
         .then((response) => response.json())
@@ -147,16 +139,14 @@ function checkplay(joinCode) {
           const username = data.username;
           const email = data.email;
 
-          // Select the HTML elements by their IDs
           const userNameElement = document.getElementById("userName");
           const userEmailElement = document.getElementById("userEmail");
 
           if (isAuthenticated) {
-            // Update the HTML elements with the fetched username and email
+
             userNameElement.textContent = username;
             userEmailElement.textContent = email;
 
-            // Do something else if needed
             console.log("Authenticated user:", username, "Email:", email);
           }
         })

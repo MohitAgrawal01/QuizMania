@@ -8,7 +8,7 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-export default function sendotp(userEmail, otpCode) {
+export default function sendotp(userEmail, otpCode,title='Account Verification - QuizMania') {
   return new Promise((resolve, reject) => {
     // Validate email format
     if (!isValidEmail(userEmail)) {
@@ -27,7 +27,7 @@ export default function sendotp(userEmail, otpCode) {
     const mailOptions = {
       from: '"Quiz Mania" <' + process.env.EMAIL + '>',
       to: userEmail,
-      subject: 'Account Verification - QuizMania',
+      subject: title,
       html: `
         <!DOCTYPE html>
         <html lang="en">

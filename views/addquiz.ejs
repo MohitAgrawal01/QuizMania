@@ -42,21 +42,29 @@
 
                 <div class="container mt-4 col-md-8">
                     <div class="mb-3">
-                        <!-- Add this input field for the quiz topic -->
                         <label for="quiz-topic" class="form-label">Quiz Topic</label>
                         <input type="text" class="form-control" ng-model="quizTopic" name="quizTopic" id="quizTopic"
                             placeholder="Enter quiz topic">
                     </div>
 
                     <div id="question-container">
-                        <!-- Questions will be added here dynamically -->
                         <div class="card mt-3" ng-repeat="question in questions track by $index"
                             style="border:1px solid black">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <h5 class="card-title">Question {{$index + 1}}</h5>
-                                    <i class="delete-question fa-regular fa-trash-can fa-lg mt-2"
-                                        style="color: #ff0000;" ng-click="removeQuestion($index)"></i>
+                                    <div>
+                                        <i class="fa-solid fa-clock"></i>
+                                        <span style="border: 2px solid orange;border-radius: 5px;">
+                                            <input id="timerValue" ng-model="question.timerValue" type="number" min="10" max="180" value="30"
+                                                style="padding-left: 5px;width: 50px;height: 20px;" ng-min="10" ng-change="checkAndUpdateTimerValue($index)">
+                                            <span style="font-weight: 500;padding-right: 5px;">in sec</span>
+                                        </span>
+                                    
+                                        <i class="delete-question fa-regular fa-trash-can fa-lg mt-2" style="color: #ff0000;" ng-click="removeQuestion($index)"></i>
+                                    </div>
+                                    
+                                    
                                 </div>
                                 <div class="mb-3" style="display: flex; align-items: center;">
                                     <div class="input-group" style="flex: 1;">
@@ -65,18 +73,18 @@
                                             style="height: 50px; background-color: rgba(0, 192, 214, 255); border: 1px solid skyblue;"
                                             placeholder="Type your question">
                                     </div>
-                                    <!-- Font Awesome icon -->
+                                  
                                     <div style="margin-left: 10px;">
                                         <i class="fas fa-image fa-lg"
                                             style="cursor: pointer; font-size: 24px; color: #333;"
                                             ng-click="openImageUploadModal($index)"></i>
-                                        <!-- Replace 'fa-image' with the class for the desired Font Awesome icon -->
+                                        
                                     </div>
 
 
                                 </div>
 
-              
+
 
                                 <div class="row">
                                     <div class="col-md-1"></div>
@@ -94,7 +102,8 @@
                                             </div>
 
                                         </div>
-                                        <button class="btn btn-success" ng-click="addOption(question)">
+                                        <button style="margin-bottom: 10px;" class="btn btn-success"
+                                            ng-click="addOption(question)">
                                             <i class="fas fa-plus-circle"></i> Option
                                         </button>
 
@@ -134,7 +143,7 @@
                             type="checkbox" id="randomQuestionCheckbox" style="border: 2px solid black;"
                             ng-model="randomQuestion">
                         <label class="form-check-label" for="randomQuestionCheckbox">
-                            Include Random Question Generation
+                            Randomise questions
                         </label>
                     </div>
                     <div class="form-check">
@@ -143,7 +152,7 @@
                             type="checkbox" id="AttemptsCheckbox" style="border: 2px solid black;"
                             ng-model="AttempsBox">
                         <label class="form-check-label" for="AttemptsCheckbox">
-                            Single Time game play
+                            Enable single attempt
                         </label>
                     </div>
                 </div>
@@ -159,7 +168,7 @@
                         </div>
                         <div class="modal-body">
                             <div id="preview-questions">
-                                <!-- Questions and options will be displayed here -->
+                                <!-- Questions and options container -->
                                 <div class="mb-3" ng-repeat="previewQuestion in previewQuestions">
                                     <strong>Question {{$index + 1}}:</strong> {{previewQuestion.question}}<br>
                                     <img ng-if="previewQuestion.imageFromDevice"
@@ -222,9 +231,11 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal"
                                 ng-click="closemodal()">Close</button>
-                            <button type="button" class="btn btn-primary" ng-click="handleImageUpload()" ng-if="questions[modalIndex].imageFromDevice">Upload</button>
-                            <button type="button" class="btn btn-primary" ng-click="handleImageUpload()" ng-if="questions[modalIndex].imageUrl">Update</button>
-                          
+                            <button type="button" class="btn btn-primary" ng-click="handleImageUpload()"
+                                ng-if="questions[modalIndex].imageFromDevice">Upload</button>
+                            <button type="button" class="btn btn-primary" ng-click="handleImageUpload()"
+                                ng-if="questions[modalIndex].imageUrl">Update</button>
+
                         </div>
                     </div>
                 </div>
@@ -238,42 +249,39 @@
 
 
             var app = angular.module('quizApp', []);
-            app.directive('fileChange', function () {
-                return {
-                    restrict: 'A',
-                    link: function (scope, element, attrs) {
-                        element.on('change', function (event) {
-                            var file = event.target.files[0];
-                            scope.$eval(attrs.fileChange, { $file: file }); // Pass the file to the function
-                        });
-                    }
-                };
-            });
-            app.controller('QuizController', function ($scope, $interval, $timeout, $window,$http) {
+            
+            app.controller('QuizController', function ($scope, $interval, $timeout, $window, $http) {
                 $scope.questions = [];
 
-                // Declare modalIndex in the controller scope
+              
                 $scope.modalIndex = null;
 
-                // Function to validate the selected image file
+                $scope.checkAndUpdateTimerValue = function(index) {
+                    console.log("esdxcds")
+        var minValue = 10;
+        if ($scope.questions[index].timerValue < minValue) {
+            alert("Timer value cannot be less than 10. Setting it to 10.");
+            $scope.questions[index].timerValue = minValue;
+        }
+    };
+
                 $scope.validateImageFile = function (input) {
                     var file = input.files[0];
 
-                    // Check if a file is selected
                     if (file) {
                         // Check if the file type is an image
                         if (file.type.startsWith('image/')) {
-                            // Read the selected image file and display it in the modal
+                            
                             var reader = new FileReader();
                             reader.onload = function (e) {
                                 $scope.$apply(function () {
-                                    // Use $scope.modalIndex to access the correct question in the array
+                                    
                                     $scope.questions[$scope.modalIndex].imageFromDevice = e.target.result;
                                 });
                             };
                             reader.readAsDataURL(file);
                         } else {
-                            // Reset the file input and display an error message
+                           
                             $scope.uploadedImage = null;
                             input.value = null;
                             alert('Please select a valid image file.');
@@ -281,23 +289,22 @@
                     }
                 };
 
-                // Add this function to your AngularJS controller
                 $scope.openImageUploadModal = function (ind) {
                     console.log($scope.questions[ind]);
                     $scope.modalIndex = ind;
                     $('#imageUploadModal').modal('show');
                 };
-                // Add this function to your AngularJS controller
+
                 $scope.deleteOption = function (question, optionIndex) {
-                    // Ensure there is at least one option before allowing deletion
-                    if (question.options.length > 1) {
+                
+                    if (question.options.length > 2) {
                         question.options.splice(optionIndex, 1);
-                        // Update the letters for each option after deletion
+                     
                         for (let i = 0; i < question.options.length; i++) {
                             question.options[i].letter = String.fromCharCode('A'.charCodeAt(0) + i);
                         }
                     } else {
-                        alert('Cannot delete the last option. Each question must have at least one option.');
+                        alert('Cannot delete the last option. Each question must have at least two option.');
                     }
                 };
 
@@ -310,58 +317,52 @@
                 }
 
                 $scope.handleImageUpload = function () {
-    var imageFromDevice = $scope.questions[$scope.modalIndex].imageFromDevice;
+                    var imageFromDevice = $scope.questions[$scope.modalIndex].imageFromDevice;
 
-    if (imageFromDevice) {
-        // Convert the base64 image data to a Blob
-        var binaryImage = atob(imageFromDevice.split(',')[1]);
-        var arrayBuffer = new ArrayBuffer(binaryImage.length);
-        var uint8Array = new Uint8Array(arrayBuffer);
-        for (var i = 0; i < binaryImage.length; i++) {
-            uint8Array[i] = binaryImage.charCodeAt(i);
-        }
-        var blob = new Blob([arrayBuffer], { type: 'image/png' });
+                    if (imageFromDevice) {
+                        // Converting the base64 image data to a Blob
+                        var binaryImage = atob(imageFromDevice.split(',')[1]);
+                        var arrayBuffer = new ArrayBuffer(binaryImage.length);
+                        var uint8Array = new Uint8Array(arrayBuffer);
+                        for (var i = 0; i < binaryImage.length; i++) {
+                            uint8Array[i] = binaryImage.charCodeAt(i);
+                        }
+                        var blob = new Blob([arrayBuffer], { type: 'image/png' });
 
-        // Prepare the FormData object
-        var formData = new FormData();
-        formData.append('image', blob, 'image.png');
+                        var formData = new FormData();
+                        formData.append('image', blob, 'image.png');
 
-        // Make an HTTP POST request to the server endpoint
-        $http({
-            method: 'POST',
-            url: '/upload',
-            headers: { 'Content-Type': undefined },
-            data: formData,
-            transformRequest: angular.identity
-        })
-        .then(function (response) {
-            // The server has responded with the image path
-            var imagePath = response.data.imagePath;
-           if(imagePath){
-            $scope.questions[$scope.modalIndex].imageFromDevice = '';
-            $scope.questions[$scope.modalIndex].imageUrl = imagePath;
-            
-           }
+                        // Make an HTTP POST request to the server endpoint
+                        $http({
+                            method: 'POST',
+                            url: '/upload',
+                            headers: { 'Content-Type': undefined },
+                            data: formData,
+                            transformRequest: angular.identity
+                        })
+                            .then(function (response) {
+                                var imagePath = response.data.imagePath;
+                                if (imagePath) {
+                                    $scope.questions[$scope.modalIndex].imageFromDevice = '';
+                                    $scope.questions[$scope.modalIndex].imageUrl = imagePath;
 
-            // Handle the response as needed (update UI, store path, etc.)
-        })
-        .catch(function (error) {
-            // Handle the error
-            console.error('Error uploading image:', error);
-        })
-        .finally(function () {
-            // Hide the modal whether the request was successful or not
-            $('#imageUploadModal').modal('hide');
-        });
-    } else {
-        $('#imageUploadModal').modal('hide');
-    }
-};
+                                }})
+                            .catch(function (error) {
+                              
+                                console.error('Error uploading image:', error);
+                            })
+                            .finally(function () {
+                                //hide the modal in every case
+                                $('#imageUploadModal').modal('hide');
+                            });
+                    } else {
+                        $('#imageUploadModal').modal('hide');
+                    }
+                };
 
                 $scope.previewQuestions = [];
                 $scope.authenticated = false;
 
-                // Add this function to your AngularJS controller
                 $scope.addOption = function (question) {
                     const nextLetter = String.fromCharCode('A'.charCodeAt(0) + question.options.length);
                     question.options.push({ letter: nextLetter, text: '' });
@@ -373,11 +374,11 @@
                         method: 'GET',
                         success: function (response) {
                             if (!response.authenticated) {
-                                // If not authenticated, show the message and update countdown dynamically
+                                // If not authenticated displaying the not authenticated messag
                                 $('#notAuthenticatedMessage').show();
-                                $scope.startCountdown(5); // Set initial countdown value
+                                $scope.startCountdown(5); 
                             } else {
-                                // If authenticated, show the content
+                               
                                 $scope.$apply(function () {
                                     $scope.authenticated = true;
                                     console.log($scope.authenticated);
@@ -393,14 +394,11 @@
 
                 $scope.uploadImage = function () {
 
-                    console.log('image changed')
-                    // Check if a file is selected
                     if ($scope.question.imageFromDevice) {
-                        // Create a FormData object to send the file
+                      
                         var formData = new FormData();
                         formData.append('image', $scope.question.imageFromDevice);
 
-                        // Use $http or $http.post to send the image to /upload
                         $http.post('/upload', formData, {
                             transformRequest: angular.identity,
                             headers: {
@@ -408,11 +406,8 @@
                             }
                         })
                             .then(function (response) {
-                                // Handle the response, which should contain imagePath in JSON
-                                var imagePath = response.data.imagePath;
+                               var imagePath = response.data.imagePath;
                                 console.log('Image uploaded successfully. ImagePath:', imagePath);
-
-                                // You can update other properties or handle the imagePath as needed
                             })
                             .catch(function (error) {
                                 console.error('Error uploading image:', error);
@@ -433,7 +428,7 @@
                     }, 1000, seconds);
 
                     countdownInterval.then(function () {
-                        // Cleanup function
+                        // resetting countdown
                         $scope.countdownValue = 0;
                     });
                 };
@@ -441,7 +436,7 @@
                 $scope.addQuestion = function () {
                     $scope.questions.push({
                         question: '',
-                        imageFromDevice: null,  // Initialize to null or undefined
+                        imageFromDevice: null,
                         imageUrl: '',
                         options: [
                             { letter: 'A', text: '' },
@@ -449,6 +444,7 @@
                             { letter: 'C', text: '' },
                             { letter: 'D', text: '' }
                         ],
+                        timerValue: 10,
                         answer: ''
                     });
                 };
@@ -473,10 +469,8 @@
 
                 $scope.confirmQuiz = function () {
 
-                    console.log('Confirming quiz...');
-                    // Check if both image fields are filled for any question
                     var invalidImageCombination = $scope.questions.some(function (question) {
-                        return (question.imageFromDevice && question.imageUrl) || (!question.imageFromDevice && !question.imageUrl);
+                        return (question.imageFromDevice && question.imageUrl) ;
                     });
 
                     if (invalidImageCombination) {
@@ -484,10 +478,6 @@
                         return;
                     }
 
-                    // Log to check if the function is reaching this point
-
-
-                    // Transform questions for API request
                     var transformedQuestions = $scope.questions.map(function (question) {
                         return {
                             question: question.question,
@@ -496,7 +486,8 @@
                             options: question.options.map(function (option) {
                                 return option.text;
                             }),
-                            answer: question.answer
+                            answer: question.answer,
+                            timerValue: question.timerValue,
                         };
                     });
 
@@ -513,7 +504,6 @@
                         }),
                         success: function (response) {
 
-                            // console.log('Server Response:', response);
                             alert('Quiz added successfully');
                             window.location.href = '/myquizes';
                         },
@@ -526,7 +516,6 @@
                     $('#previewModal').modal('hide');
                 };
 
-                // Initial question card
                 $scope.addQuestion();
                 $scope.checkAuthentication();
             });

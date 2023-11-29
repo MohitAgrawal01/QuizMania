@@ -12,18 +12,18 @@
         <style>
 
         #loading-spinner {
-            display: none; /* Hide the spinner initially */
+            display: none; 
             text-align: center;
             margin-top: 50px;
         }
 
         #loading-spinner {
-    display: block !important; /* Override any other styles */
+    display: block !important; 
 }
 
 
         #quiz-container {
-            display: none; /* Hide the quiz container initially */
+            display: none; 
         }
             a {
                 text-decoration: none;
@@ -62,14 +62,14 @@
 
                 <div class="container mt-4 col-md-8">
                     <div class="mb-3">
-                        <!-- Add this input field for the quiz topic -->
+                        
                         <label for="quiz-topic" class="form-label">Quiz Topic</label>
                         <input type="text" class="form-control" ng-model="quizTopic" name="quizTopic" id="quizTopic"
                             placeholder="Enter quiz topic" value="">
                     </div>
 
                     <div id="question-container">
-                        <!-- Questions will be added here dynamically -->
+                        <!-- Dynamic questions container -->
                         <div class="card mt-3" ng-repeat="question in questions track by $index"
                             style="border:1px solid black">
                             <div class="card-body">
@@ -125,13 +125,13 @@
                     <div class="form-check">
                         <input class="form-check-input" onclick="document.getElementById('checkboxValue').innerHTML=document.getElementById('checkboxValue').innerHTML=='no'?'yes':'no'" type="checkbox" id="randomQuestionCheckbox" style="border: 2px solid black;" ng-model="randomQuestion">
                         <label class="form-check-label" for="randomQuestionCheckbox">
-                          Include Random Question Generation
+                          Randomise questions
                         </label>
                       </div>
                       <div class="form-check">
                         <input class="form-check-input" onclick="document.getElementById('checkboxValue2').innerHTML=document.getElementById('checkboxValue2').innerHTML=='no'?'yes':'no'" type="checkbox" id="AttemptsCheckbox" style="border: 2px solid black;" ng-model="AttempsBox">
                         <label class="form-check-label" for="AttemptsCheckbox">
-                          Single Time game play
+                          Enable single attempt
                         </label>
                       </div>
                 </div>
@@ -155,7 +155,7 @@
                         </div>
                         <div class="modal-body">
                             <div id="preview-questions">
-                                <!-- Questions and options will be displayed here -->
+                                <!-- Questions and options container -->
                                 <div class="mb-3" ng-repeat="previewQuestion in previewQuestions">
                                     <strong>Question {{$index + 1}}:</strong> {{previewQuestion.question}}<br>
                                     Options:<br>
@@ -203,7 +203,7 @@
                             if (!response.authenticated) {
                                 // If not authenticated, show the message and update countdown dynamically
                                 $('#notAuthenticatedMessage').show();
-                                $scope.startCountdown(5); // Set initial countdown value
+                                $scope.startCountdown(5); //Initial countdown value
                             } else {
 
                                 if (urlParams.get('topic').length < 1) {
@@ -224,7 +224,7 @@
                     });
                 };
 
-                // Function to start the dynamic countdown
+                //  Dynamic countdown function
                 $scope.startCountdown = function (seconds) {
                     $scope.countdownValue = seconds;
 
@@ -278,7 +278,7 @@
                         return {
                             question: question.question,
                             options: question.options.map(function (option) {
-                                return option.text; // Extracting only the text from each option
+                                return option.text; 
                             }),
                             answer: question.answer
                         };
@@ -297,7 +297,6 @@
                         }),
                         success: function (response) {
 
-                            // console.log('Server Response:', response);
                             alert('Quiz added successfully');
                             window.location.href = '/myquizes';
                         },
@@ -317,7 +316,7 @@
 
                     $scope.quizTopic = urlParams.get('topic') || '';
 
-                    $scope.loading = true;  // Set initial loading state to true
+                    $scope.loading = true; 
                     try{
                    await $.ajax({
                         url: '/getaiquiz?topic=' + urlParams.get('topic'),
@@ -331,7 +330,6 @@
                             document.getElementById('errorText').innerText = response.error;
                             return alert(response.error);
                            }
-                            // document.getElementById('quizTopic').value = urlParams.get('topic');
 
                             var json = JSON.parse(response);
 
@@ -352,7 +350,6 @@
                                     $scope.loading = false;
 });
 
-                                // Push the question object to the $scope.questions array
                                
 
 
@@ -360,9 +357,7 @@
 
 
                             console.log('Server Response:', response);
-                            //alert('Quiz fetched successfully');
                             $scope.loading = false; 
-                            // window.location.href = '/myquizes';
                         },
                         error: function (err) {
                             $scope.loading = false; 

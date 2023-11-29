@@ -9,19 +9,18 @@ import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
 import useragent from 'express-useragent';
 import requestIp from 'request-ip';
-// Route to serve the addquiz.html file
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 
 router.post('/addquiz', checkUserLogin, async (req, res) => {
+
+  try {
   const { quizTopic, questions,isRandom,singleTime,imageUrl } = req.body;
 
   if (!quizTopic || !Array.isArray(questions) || questions.length === 0 || quizTopic.length<3) {
     return res.status(400).json({ message: 'Invalid quiz data format' });
   }
-
-
 
   if (isRandom === "yes" || isRandom === "no");
   else {
@@ -45,12 +44,17 @@ router.post('/addquiz', checkUserLogin, async (req, res) => {
         return res.status(400).json({ message: 'Invalid Image URL' });
       }
     }
+
+    if(question.timerValue<10)
+    {
+      return res.status(400).json({ message: 'Invalid Timing , timining must be atleast of 10 sec' });
+    }
   }
 
   // Generate a random quizId
   const quizId = generateSevenDigitNumericId();
 
-  try {
+  
     const jwtCookie = req.cookies.jwt;
 
     if (jwtCookie) {
@@ -66,7 +70,7 @@ router.post('/addquiz', checkUserLogin, async (req, res) => {
           questions,
           singleTime,
           createdBy: email,
-          creationTime, // Adding creationTime field with the current timestamp
+          creationTime, 
         });
 
         // Save the quiz to the database
@@ -116,9 +120,10 @@ router.get('/getQuestion/:quizId', checkUserLogin, async (req, res) => {
       return res.status(200).json({ status: 'true', message: 'quiz completed',currentQuestion:req.session.quiz.currentQuestionIndex+1,totalQuestions:questions.length, score:req.session.quiz.userScore });
     }
 
-    if (Date.now() - req.session.quiz.time < 10000) {
+    var qtime =  req.session.quiz.questions[req.session.quiz.currentQuestionIndex].timerValue || 10;
+    if (Date.now() - req.session.quiz.time < qtime*1000) {
       const elapsedTimeInMilliseconds = Date.now() - req.session.quiz.time;
-      timeLeft = 10 - Math.floor(elapsedTimeInMilliseconds / 1000); // Convert to seconds and round down
+      timeLeft = qtime - Math.floor(elapsedTimeInMilliseconds / 1000); // Convert to seconds and round down
     }
 
     
@@ -162,8 +167,8 @@ router.post('/submitQuestion/:quizId', checkUserLogin, async (req, res) => {
       userSession.userScore++;
     }
 
-    // Update current question index
     req.session.quiz.isNew = true;
+    // Update current question index
     userSession.currentQuestionIndex++;
 
     if (userSession.currentQuestionIndex < questions.length) {
@@ -208,8 +213,8 @@ router.get('/myquizes', async (req, res) => {
       const userId = decodedToken.email;
 
       try {
-        // Retrieve quizzes including creationTime
-        const userQuizzes = await Quiz.find({ createdBy: userId }, 'quizId createdBy creationTime quizTopic questions');
+       
+        const userQuizzes = await Quiz.find({ createdBy: userId ,status:"active"}, 'quizId createdBy creationTime quizTopic questions');
        
         // Map quizzes to include the creationTime in a more readable format
         const quizzesWithFormattedTime = userQuizzes.map((quiz) => ({
@@ -231,7 +236,6 @@ router.get('/myquizes', async (req, res) => {
       console.error('JWT verification error:', jwtError);
     }
   } else {
-    // Handle the case where the JWT cookie is not present or invalid
     res.status(401).send('<script>  window.location ="/login"; </script>');
   }
 });
@@ -363,8 +367,7 @@ router.post('/validateJoinCode', checkUserLogin, async (req, res) => {
   const joinCode = req.body.joinCode;
 
   try {
-    //assuming join code is the same as quizId
-    const quiz = await Quiz.findOne({ quizId: joinCode }).exec();
+   const quiz = await Quiz.findOne({ quizId: joinCode }).exec();
     if (!quiz) {
       // No quiz found for the given join code, so it's invalid
       return res.json({ valid: false, message: 'Invalid join code' });
@@ -438,7 +441,7 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
         $match: { quizId: quizId }
       },
       {
-        $sort: { userId: 1, score: -1, username: 1 } // Include username in the sorting
+        $sort: { userId: 1, score: -1, username: 1 } 
       },
       {
         $group: {
@@ -453,12 +456,12 @@ router.get('/:quizId/leaderboard', checkUserLogin, async (req, res) => {
           _id: 0,
           quizId: 1,
           userId: "$_id",
-          username: 1, // Include username in the projection
+          username: 1, 
           score: "$highestScore"
         }
       },
       {
-        $sort: { score: -1 } // Sort by score in descending order
+        $sort: { score: -1 } 
       },
       {
         $limit: 10
@@ -568,7 +571,6 @@ async function updateScoreAndStatus(playId, newScore, newStatus,qCount) {
       userScore.status = newStatus;
       userScore.AttemptedCount = qCount;
 
-      // You may want to update other fields as needed
 
       // Save the updated record
       await userScore.save();
@@ -579,5 +581,35 @@ async function updateScoreAndStatus(playId, newScore, newStatus,qCount) {
     console.error('Error updating score and status:', error);
   }
 }
+
+router.post('/deleteQuiz',checkUserLogin, async (req, res) => {
+  const { quizId } = req.body;
+
+  const jwtCookie = req.cookies.jwt;
+
+      const decodedToken = jwt.verify(jwtCookie, process.env.JWT_SECRET);
+      const email = decodedToken.email;
+
+  try {
+    if(quizId==''){
+      return res.status(404).json({ error: "Quiz not found" });
+    }
+    // Check if the quiz with the given quizId and createdBy email exists
+    const quiz = await Quiz.findOne({ quizId, createdBy: email });
+
+    if (!quiz) {
+      return res.status(404).json({ error: "Quiz not found" });
+    }
+
+    // Update the status to "inactive"
+    quiz.status = "inactive";
+    await quiz.save();
+
+    return res.json({ message: "Quiz deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 export default router;

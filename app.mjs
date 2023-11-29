@@ -18,7 +18,7 @@ app.use('/uploads', express.static('public'));
 dotenv.config();
 
 app.use(session({
-  secret: process.env.SESSION_SECRET, // Replace with your actual secret key
+  secret: process.env.SESSION_SECRET, 
   resave: false,
   saveUninitialized: true,
 }));
@@ -68,9 +68,6 @@ app.get('/login',(req,res)=>{
 app.get('/signup',(req,res)=>{
   res.render('signup',{title:'signup'});
 })
-// app.get('/myquizes',(req,res)=>{
-//   res.render('myquizes');
-// })
 
 app.get("/join",(req,res)=>{
   res.render("join",{title:'Join Quiz',currentPage:'join'});
@@ -79,8 +76,7 @@ app.get("/join",(req,res)=>{
 // Route to join a quiz
 app.get('/joinquiz/:quizId', checkUserLogin, (req, res) => {
   const quizId = req.params.quizId;
-  // Serve the "joinquiz" page or template
-  res.render('joinquiz', { quizId });
+  res.render('joinquiz', { quizId,title:'Joinquiz'});
 });
 
 app.listen(port, () => {
@@ -98,5 +94,17 @@ app.listen(port, () => {
     res.render("aiquiz",{title:'Generate Quizes using AI',currentPage:'aiquiz'});
   });
 
-app.use('', authRoutes);
+  app.get('/forgotemailverify', (req, res) => {
+    res.render("forgotemailverify",{title:'Forgot Password'});
+  });
+
+
+  
+
+  app.use('', authRoutes);
 app.use('', quizRoutes);
+
+
+  app.all("*",(req,res)=>{
+    res.status(404).json({status:'Not Found'});
+  })

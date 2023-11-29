@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
+    <link rel="icon" href="/logo.jpg" type="image/jpg">
     <title><%=title %></title>
     <style>
       a:hover{
@@ -32,8 +33,7 @@
     </style>
 </head>
 <body class="min-h-full">
-<!-- <div class="min-h-full"> -->
-    <nav class="bg-gray-800">
+    <nav class="bg-gray-800 ">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
           <div class="flex items-center">
@@ -60,8 +60,7 @@
               </button>
             </div>
             <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" id="menu" style="display: none;">
-              <!-- Active: "bg-gray-100", Not Active: "" -->
-              <div  class="block px-4 py-2 text-sm text-gray-700 overflow-auto hide-scrollbar" role="menuitem" tabindex="-1" id="userName">Your Profile</div><hr>
+             <div  class="block px-4 py-2 text-sm text-gray-700 overflow-auto hide-scrollbar" role="menuitem" tabindex="-1" id="userName">Your Profile</div><hr>
               <div  class="block px-4 py-2 text-sm text-gray-700 overflow-auto hide-scrollbar" role="menuitem" tabindex="-1" id="userEmail">Settings</div><hr>
               <a href="/logout" class="flex items-center block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-2">Log out  <svg class="ml-2 h-6 w-6 text-red-500"  width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />  <path d="M7 12h14l-3 -3m0 6l3 -3" /></svg></a>
             </div>
@@ -125,20 +124,15 @@
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 mb-0"><%=title%></h1>
       </div>
     </header>
-  <!-- </div> -->
   <script>
 
-    // Fetch authentication status using an API call or your logic
     fetch('/isSessionAuthenticated')
         .then(response => response.json())
         .then(data => {
             const isAuthenticated = data.authenticated;
             
-
-            // Set the display property based on authentication status
             document.getElementById('loginButton').style.display = isAuthenticated ? 'none' : 'block';
             document.getElementById('signupButton').style.display = isAuthenticated ? 'none' : 'block';
-            // document.getElementById('userBlock').style.display = isAuthenticated ? 'block' : 'none';
             document.getElementById('userPic').style.display = isAuthenticated ? 'block' : 'none';
 
         })
@@ -153,22 +147,18 @@
             const isAuthenticated = data.authenticated;
             const username = data.username;
             const email = data.email;
-
-        // Select the HTML elements by their IDs
-            const userNameElement = document.getElementById('userName');
+   const userNameElement = document.getElementById('userName');
             const userEmailElement = document.getElementById('userEmail');
             
 
             if (isAuthenticated) {
-            // Update the HTML elements with the fetched username and email
-                userNameElement.textContent = username;
+              userNameElement.textContent = username;
                 if(email.length>20){
                   userEmailElement.textContent = email.substring(0,7)+"...."+email.substring(email.length-10,email.length);
                 }else{
                 userEmailElement.textContent = email;
                 }
 
-            // Do something else if needed
                 console.log('Authenticated user:', username, 'Email:', email);
             }
           })
